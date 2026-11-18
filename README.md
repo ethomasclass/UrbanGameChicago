@@ -1,25 +1,29 @@
-# The Urban Game: Chicago, 1865 to 1900
+# The Urban Game: Chicago
 
-A 3D city-building lab for US History (Gilded Age). Students run one ward of Chicago's Near West Side for 35 years while trains keep delivering newcomers. They zone land and pay for public works; builders, landlords, factory owners, and a ward boss do the rest.
+A 3D version of the paper "Urban Game" for US History. Students start with empty prairie west of the Chicago River in 1837 and build a city by 1900, one round at a time.
+
+Each of the eleven rounds works the same way:
+
+1. **History.** A short card sets the scene.
+2. **Build.** The game lists what must be built. Students decide where each thing goes.
+3. **What happened.** Newcomers arrive and the game reports, in plain sentences, what those placements did to the people living there.
 
 - **Play:** open `index.html` from a web server (GitHub Pages works: Settings, Pages, deploy from the `main` branch root).
-- **Teacher script and notes:** `teacher.html`
-- **Two modes:** solo (clock runs on its own) or teacher-led (stops after each of seven rounds).
-- **No accounts, no network play, no build step.** three.js is included in `vendor/`. After one online load the game opens offline.
+- **Teacher script:** `teacher.html`
+- No accounts, no network play, no build step. three.js is included in `vendor/`. After one online load the game opens offline.
 
 ## Files
 
 | File | What it is |
 | --- | --- |
-| `js/data.js` | Map constants, building table, arrivals, and the whole historical script (events, choices, rounds, resident quotes). Edit text here. |
-| `js/sim.js` | The simulation. One `step()` is one month. Deterministic: same choices give the same city. |
-| `js/world.js` | three.js renderer: instanced buildings, GPU smoke, fire, crowds, street view, photographs. |
-| `js/main.js` | Interface, tools, clock, solo and teacher-led flow, saving. |
-| `js/report.js` | The printable end-of-game report. |
+| `js/data.js` | The eleven rounds (history text, build lists, discussion questions) and the building table. Edit text here. |
+| `js/sim.js` | The rules: what placement does to health, happiness, work, fire, and disease. |
+| `js/world.js` | three.js renderer. |
+| `js/main.js` | Round flow and interface. |
+| `js/report.js` | The printable final report. |
 | `tools/bot.mjs` | Headless playthroughs for tuning: `node tools/bot.mjs` |
 
 ## Address options
 
-- `?skip=1885` jump to a year using default choices (for previewing)
+- `?skip=5` let the builders play the first five rounds (for previewing later ones)
 - `?lowgfx` force the lightest graphics setting
-- `?speed=4` run the clock faster (testing)

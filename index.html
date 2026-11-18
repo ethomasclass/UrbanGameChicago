@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-<title>The Urban Game: Chicago, 1865 to 1900</title>
+<title>The Urban Game: Chicago</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%275%27 fill=%27%23a8322a%27/%3E%3Cpath d=%27M6 26V14l5-4v16zm7 0V8l6-3v21zm8 0V12l5 3v11z%27 fill=%27%23f1e7cf%27/%3E%3C/svg%3E">
 <link rel="stylesheet" href="css/style.css">
 </head>
@@ -12,73 +12,51 @@
 
 <div id="hud" hidden>
   <header id="top">
-    <div id="date"><span id="month">January</span><b id="year">1865</b></div>
+    <div id="date"><b id="year">1837</b><span id="rname"></span></div>
+    <div id="dots"></div>
     <div id="meters"></div>
-    <div id="clockbtns">
-      <button id="pause" title="Pause (space)">⏸</button>
-      <button id="sound" title="Sound on or off">🔊</button>
-    </div>
-    <div id="timeline"><div id="tfill"></div><div id="tticks"></div></div>
+    <div id="timer"><div></div></div>
   </header>
 
-  <aside id="tools"></aside>
-
-  <aside id="right">
-    <h4>Maps</h4>
-    <div id="overlays"></div>
-    <div id="legend"></div>
-    <h4>Camera</h4>
-    <div id="cambtns">
-      <button data-cam="rl" title="Turn left (Q)">⟲</button><button data-cam="rr" title="Turn right (E)">⟳</button>
-      <button data-cam="zi" title="Zoom in">＋</button><button data-cam="zo" title="Zoom out">－</button>
-    </div>
-    <button id="streetbtn" class="wide">👁 Street view</button>
-    <button id="photobtn" class="wide">📷 Take photograph</button>
-    <div id="album"></div>
+  <aside id="list" hidden>
+    <h4>You must build</h4>
+    <div id="items"></div>
+    <p id="tip"></p>
+    <button id="undo">↩ Undo last</button>
   </aside>
 
-  <div id="steps"></div>
+  <div id="views">
+    <div id="mapview"><button data-o="none" class="on">City</button><button data-o="health">Health</button><button data-o="groups">Nationalities</button></div>
+    <div id="legend"></div>
+    <div id="cambtns"><button data-cam="rl" title="Turn left (Q)">⟲</button><button data-cam="rr" title="Turn right (E)">⟳</button><button data-cam="zi" title="Zoom in">＋</button><button data-cam="zo" title="Zoom out">－</button></div>
+    <button id="streetbtn">👁 Walk the streets</button>
+    <button id="photobtn" hidden>📷 Take a photograph</button>
+    <button id="sound" title="Sound on or off">🔊</button>
+  </div>
+
   <div id="banner" hidden></div>
-  <div id="inspect" hidden></div>
-  <div id="toasts"></div>
-  <footer id="bottom">
-    <div id="tip"></div>
-    <div id="ticker"></div>
-  </footer>
+  <div id="hover" hidden></div>
+  <div id="toast" hidden></div>
 </div>
 
-<div id="roundcard" hidden></div>
-
-<div id="modal" hidden>
-  <article class="paper">
-    <div class="mast"><span>The West Side Daily</span><i id="mkick"></i></div>
-    <h1 id="mhead"></h1>
-    <div id="mbody"></div>
-    <div id="mchoices"></div>
-    <div id="mtimer"><div></div></div>
-    <p id="mdefault"></p>
-  </article>
-</div>
+<div id="card" hidden></div>
 
 <div id="start">
   <div class="startcard">
-    <p class="eyebrow">A city-building lab on the Gilded Age</p>
+    <p class="eyebrow">A city-building lab on urbanization</p>
     <h1>The Urban Game: Chicago</h1>
-    <p class="sub">Run the West Side from 1865 to 1900. The trains will not wait for you.</p>
+    <p class="sub">Start with empty prairie in 1837. Build a city by 1900.</p>
+    <ol>
+      <li>Each round opens with a short piece of history.</li>
+      <li>Then you are told what must be built. <b>You decide where it goes.</b></li>
+      <li>Then you see what your choices did to the people who live there.</li>
+    </ol>
     <label>Your name or group <input id="pname" maxlength="40" placeholder="Name"></label>
-    <div class="opt"><span>How are you playing?</span>
-      <label><input type="radio" name="mode" value="solo" checked> On my own (the clock runs by itself)</label>
-      <label><input type="radio" name="mode" value="teacher"> With my teacher (the game stops after each round)</label>
-    </div>
-    <div class="opt"><span>Pace</span>
-      <label><input type="radio" name="pace" value="30"> Quick (about 20 minutes)</label>
-      <label><input type="radio" name="pace" value="45" checked> Standard (about 30 minutes)</label>
-      <label><input type="radio" name="pace" value="60"> Full period (about 40 minutes)</label>
-    </div>
-    <div class="opt row"><label><input type="checkbox" id="sndopt" checked> Sound</label></div>
-    <button id="go" class="big">Begin in 1865</button>
+    <label class="chk"><input type="checkbox" id="timed" checked> Timed rounds. If the clock runs out, the builders finish wherever they like.</label>
+    <label class="chk"><input type="checkbox" id="sndopt" checked> Sound</label>
+    <button id="go" class="big">Begin in 1837</button>
     <button id="resume" class="big ghost" hidden>Continue saved game</button>
-    <p class="fine">Drag to move the map. Scroll to zoom. Right-drag, or Q and E, to turn. <a href="teacher.html" target="_blank">Teacher script and notes</a></p>
+    <p class="fine">Click to build. Drag to move the map. Scroll to zoom. <a href="teacher.html" target="_blank">Teacher script</a></p>
   </div>
 </div>
 

@@ -1,6 +1,6 @@
 // The Urban Game: Chicago. three.js renderer. Everything is instanced or GPU-animated so it runs on Chromebooks.
 import * as THREE from '../vendor/three.module.min.js';
-import { BW, BH, TW, TH, NB, NL, T, B, GROUPS, HOOD_NAMES, NS_STREETS, EW_STREETS, LANDMARKS } from './data.js';
+import { BW, BH, TW, TH, NB, NL, T, B, GROUPS, HOOD_NAMES, NS_STREETS, EW_STREETS } from './data.js';
 import { lotId } from './sim.js';
 
 const HX = TW / 2, HZ = TH / 2;
@@ -130,7 +130,7 @@ export class World {
     this.scene = new THREE.Scene();
     this.sky = C('#b9cdd8'); this.scene.background = this.sky.clone(); this.scene.fog = new THREE.Fog(this.sky.clone(), 70, 300);
     this.camera = new THREE.PerspectiveCamera(38, 1, .5, 600);
-    this.cam = { x: 6, z: 2, dist: 62, yaw: -.5, pitch: .86, tx: 6, tz: 2, td: 62 };
+    this.cam = { x: 1, z: 0, dist: 36, yaw: -.5, pitch: .86, tx: 1, tz: 0, td: 36 };
     this.street = null; this.shake = 0; this.night = 0; this.nightT = 0; this.haze = 0; this.time = 0;
     this.overlay = 'none'; this.zoneView = false;
     this.hemi = new THREE.HemisphereLight('#eef4f8', '#8a7d68', 1.5); this.scene.add(this.hemi);
@@ -164,8 +164,8 @@ export class World {
     this.riverMat = new THREE.MeshLambertMaterial({ color: '#5e7f8c' });
     const riv = new THREE.Mesh(new THREE.PlaneGeometry(8, 900), this.riverMat); riv.rotation.x = -Math.PI / 2; riv.position.set(HX + 4.6, -.02, 0); this.scene.add(riv);
     const gb = new GB();
-    for (const row of [0, 4, 9]) gb.box(HX + 4.6, 0, wz(row * 5), 9.4, .12, .8, '#5b4f44').box(HX + 4.6, .12, wz(row * 5) - .42, 9.4, .14, .05, '#3a3430').box(HX + 4.6, .12, wz(row * 5) + .42, 9.4, .14, .05, '#3a3430');
-    for (let k = 0; k < 9; k++) { const z = -HZ + 6 + k * 6.3 + (k % 2) * 2, x = HX + 2.2 + (k % 3) * 1.6; gb.box(x, 0, z, .5, .16, 1.9, '#4a3d33').box(x, .16, z - .3, .04, 1.2, .04, '#6b5a48').box(x, .16, z + .5, .04, .9, .04, '#6b5a48').box(x, .16, z, .36, .1, .8, '#d9bd80'); }
+    for (const row of [0, 2, 4]) gb.box(HX + 4.6, 0, wz(row * 5), 9.4, .12, .8, '#5b4f44').box(HX + 4.6, .12, wz(row * 5) - .42, 9.4, .14, .05, '#3a3430').box(HX + 4.6, .12, wz(row * 5) + .42, 9.4, .14, .05, '#3a3430');
+    for (let k = 0; k < 5; k++) { const z = -HZ + 3 + k * 4.2 + (k % 2), x = HX + 2.2 + (k % 3) * 1.6; gb.box(x, 0, z, .5, .16, 1.9, '#4a3d33').box(x, .16, z - .3, .04, 1.2, .04, '#6b5a48').box(x, .16, z + .5, .04, .9, .04, '#6b5a48').box(x, .16, z, .36, .1, .8, '#d9bd80'); }
     this.scene.add(new THREE.Mesh(gb.build(), new THREE.MeshLambertMaterial({ vertexColors: true })));
     this.hi = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ color: '#fff', transparent: true, opacity: .4, depthTest: false })); this.hi.rotation.x = -Math.PI / 2; this.hi.visible = false; this.hi.renderOrder = 5; this.scene.add(this.hi);
   }
@@ -193,7 +193,7 @@ export class World {
       x.fillStyle = L.el ? '#1d1d1f' : '#2a2826';
       for (const o of [5, 10]) { if (L.axis) x.fillRect(L.idx * 5 * PX + o, 0, 1.5, TH * PX); else x.fillRect(0, L.idx * 5 * PX + o, TW * PX, 1.5); }
     }
-    x.fillStyle = '#2a2826'; for (const o of [4, 7, 10, 13]) x.fillRect(50 * PX + o - 1, 0, 1.2, TH * PX); // freight tracks on the docks
+    x.fillStyle = '#2a2826'; for (const o of [4, 7, 10, 13]) x.fillRect((TW - 1) * PX + o - 1, 0, 1.2, TH * PX); // freight tracks on the docks
     x.drawImage(this.noise, 0, 0);
     this.gTex.needsUpdate = true;
   }
@@ -203,26 +203,26 @@ export class World {
     const gb = new GB().box(0, 0, 0, 1, 1, 1, '#b3a694', [2, 2, 3]);
     const spots = [];
     for (let z = -HZ - 30; z < HZ + 30; z += 2.6) for (let x = -HX - 34; x < HX; x += 2.6) {
-      if (x > -HX - 1.5 && z > -HZ - 1.5 && z < HZ + 1.5) continue;
-      if (x < -HX - 1 && x > -HX - 12 && z > HZ - 44) continue; // cemetery
+      if (x > -HX - 4 && z > -HZ - 4 && z < HZ + 5) continue;
+      if (x < -HX - 1 && x > -HX - 12.5 && z > -HZ - 2 && z < HZ + 2) continue; // cemetery
       const d = Math.max(0, -HX - x) + Math.max(0, Math.abs(z) - HZ) + (HX - x) * .35;
       spots.push({ x: x + hash(spots.length) * 1.2, z: z + hash(spots.length + 7) * 1.2, d, h: hash(spots.length + 3) });
     }
     spots.sort((a, b) => a.d - b.d); this.spots = spots;
     const m = this.surround = new THREE.InstancedMesh(gb.build(), this.bMat, spots.length); m.frustumCulled = false; m.count = 0; this.scene.add(m);
-    spots.forEach((p, k) => { m.setColorAt(k, _c.copy(TINTS.frame[k % 5]).multiplyScalar(.9 + p.h * .2)); });
+    spots.forEach((p, k) => { m.setColorAt(k, _c.copy(TINTS.frame[k % 5]).lerp(C('#e2d9c4'), .45).multiplyScalar(1 + p.h * .15)); });
     const dt = []; for (let z = -HZ - 26; z < HZ + 26; z += 3.4) for (let x = HX + 10; x < HX + 44; x += 3.4) dt.push({ x, z, h: hash(dt.length + 99), d: x - HX });
     this.dtSpots = dt; const d = this.downtown = new THREE.InstancedMesh(gb.build(), this.bMat, dt.length); d.frustumCulled = false; this.scene.add(d);
-    this.setEra(1865, false);
+    this.setEra(1837, false);
   }
   setEra(year, burned) {
-    const t = clamp((year - 1865) / 35, 0, 1), m = this.surround, n = Math.floor(this.spots.length * (.06 + .94 * t));
-    for (let k = 0; k < n; k++) { const p = this.spots[k], age = clamp((n - k) / 200, 0, 1); _m.compose(_p.set(p.x, 0, p.z), _q.identity(), _s.set(1.5, .35 + age * (.5 + p.h * 1.1), 1.5)); m.setMatrixAt(k, _m); }
+    const t = clamp((year - 1837) / 63, 0, 1), tall = clamp((year - 1875) / 25, 0, 1), m = this.surround, n = Math.floor(this.spots.length * (.02 + .98 * t * t));
+    for (let k = 0; k < n; k++) { const p = this.spots[k], age = clamp((n - k) / 200, 0, 1); _m.compose(_p.set(p.x, 0, p.z), _q.identity(), _s.set(1.4, .22 + age * (.3 + p.h * .6), 1.4)); m.setMatrixAt(k, _m); }
     m.count = n; m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true;
     const d = this.downtown;
     this.dtSpots.forEach((p, k) => {
       const near = 1 - clamp(p.d / 34, 0, 1);
-      let h = burned ? .15 + p.h * .3 : .7 + p.h * 1.1 + near * .8 + (year > 1873 ? t * t * (4 + p.h * 9) * (p.h > .45 ? 1 : .3) : 0);
+      let h = burned ? .15 + p.h * .3 : .7 + p.h * 1.1 + near * .8 + tall * tall * (4 + p.h * 9) * (p.h > .45 ? 1 : .3);
       _m.compose(_p.set(p.x, 0, p.z), _q.identity(), _s.set(2.1, h, 2.1)); d.setMatrixAt(k, _m);
       d.setColorAt(k, burned ? _c.setRGB(.05, .045, .04) : _c.copy(TINTS.brick[k % 6]).lerp(C('#d6cfc0'), .62 + p.h * .3));
     });
@@ -241,13 +241,8 @@ export class World {
   }
   overlayColor(i) {
     const s = this.sim, ov = this.overlay, p = s.pop[i], b = s.b[i];
-    if (ov === 'crowd') return p > 0 ? heat((p / B[b].cap - .7) / 1.5) : null;
-    if (ov === 'health') return p > 0 ? heat((s.lotRisk[i] - .014) / .034) : null;
-    if (ov === 'smoke') return heat(s.poll[i] / 2);
-    if (ov === 'fire') return b && b !== T.RUBBLE ? heat(B[b].flam * (s.cFire[i] ? .5 : 1) / 1.3) : null;
-    if (ov === 'happy') return p > 0 ? heat(1 - s.lotHappy[i] / 75) : null;
+    if (ov === 'health') return p > 0 ? heat(1 - (s.health[i] - 35) / 55) : null;
     if (ov === 'groups') return p > 0 ? _c.set(GROUPS[s.g[i]].color) : null;
-    if (ov === 'pipes') { const k = s.blk[i]; return s.sewer[k] ? (s.paved[k] ? _c.set('#3f7fd0') : _c.set('#7fb4e6')) : s.paved[k] ? _c.set('#c9b48a') : _c.set('#c8503c'); }
     return null;
   }
   colorFor(i) {
@@ -280,7 +275,7 @@ export class World {
     }
     if (this.slotT[i]) { const P = this.pools[this.slotT[i]]; P.mesh.setColorAt(this.slotI[i], this.colorFor(i)); P.mesh.instanceColor.needsUpdate = true; }
   }
-  syncAll() { for (let i = 0; i < NL; i++) this.setLot(i, false); this.drawGround(); this.rebuildSmoke(); this.rebuildFire(); this.rebuildAgents(); this.rebuildLines(); this.updateCemetery(); this.updateHoods(); this.setEra(Math.max(1865, this.sim.year), this.sim.year >= 1871 && this.sim.year < 1874 && this.sim.done.fire); }
+  syncAll() { for (let i = 0; i < NL; i++) this.setLot(i, false); this.drawGround(); this.rebuildSmoke(); this.rebuildFire(); this.rebuildAgents(); this.rebuildLines(); this.updateCemetery(); this.updateHoods(); this.setEra(this.sim.year, this.sim.year === 1871 && !!this.sim.done.fire); }
   recolor() { for (let i = 0; i < NL; i++) if (this.slotT[i]) this.pools[this.slotT[i]].mesh.setColorAt(this.slotI[i], this.colorFor(i)); for (const k in this.pools) { const m = this.pools[k].mesh; if (m.count) m.instanceColor.needsUpdate = true; } }
   setOverlay(o) { this.overlay = o; this.recolor(); this.drawGround(); }
 
@@ -337,7 +332,7 @@ export class World {
   rebuildAgents() {
     const s = this.sim, cum = []; let tot = 0;
     for (let i = 0; i < NL; i++) { const b = s.b[i]; const w = s.pop[i] + (b >= 10 && b < 30 ? 14 : 0); if (w > 0) { tot += w; cum.push(i, tot); } }
-    const n = tot ? Math.min(this.Q[this.tier].agents, Math.round(30 + s.totPop / 24)) : 0, ppl = [], wag = [];
+    const n = tot ? Math.min(this.Q[this.tier].agents, Math.round(8 + s.totPop / 5)) : 0, ppl = [], wag = [];
     const cloth = ['#3a3836', '#5b4a3c', '#6b6558', '#2f3a4a', '#7a3b33', '#8a8372', '#4a4f3c', '#b9b0a0', '#3f3530'].map(C);
     let seed = 1; const rnd = () => hash(seed++);
     for (let k = 0; k < n; k++) {
@@ -371,18 +366,18 @@ export class World {
   buildExtras() {
     // potter's field: one marker for every 14 deaths
     const cg = new GB().box(0, 0, 0, .05, .26, .03, '#e6e0d2').box(0, .15, 0, .16, .05, .03, '#e6e0d2').build();
-    this.graves = new THREE.InstancedMesh(cg, new THREE.MeshLambertMaterial({ vertexColors: true }), 2100); this.graves.count = 0; this.graves.frustumCulled = false; this.scene.add(this.graves);
-    const fg = new GB().box(-HX - 6.5, 0, HZ - 22, 10.4, .012, 42.4, '#6f7d55');
-    for (let z = HZ - 43; z <= HZ - 1; z += 1) for (const x of [-HX - 11.6, -HX - 1.4]) fg.box(x, 0, z, .05, .22, .05, '#3a3632');
+    this.graves = new THREE.InstancedMesh(cg, new THREE.MeshLambertMaterial({ vertexColors: true }), 1000); this.graves.count = 0; this.graves.frustumCulled = false; this.scene.add(this.graves);
+    const fg = new GB().box(-HX - 6.5, 0, 0, 10.4, .012, TH + 1, '#6f7d55');
+    for (let z = -HZ - .5; z <= HZ + .5; z += 1) for (const x of [-HX - 11.6, -HX - 1.4]) fg.box(x, 0, z, .05, .22, .05, '#3a3632');
     this.scene.add(new THREE.Mesh(fg.build(), new THREE.MeshLambertMaterial({ vertexColors: true })));
     // the train that brings the newcomers
     const tg = new GB().box(0, .04, 0, .3, .26, .9, '#1f1e1e').box(0, .3, .25, .12, .2, .12, '#1f1e1e').box(0, .04, -.55, .32, .34, .5, '#2b2928');
     for (let k = 0; k < 5; k++) tg.box(0, .04, -1.45 - k * 1.05, .32, .34, .95, k % 2 ? '#7a3b2e' : '#5d5140', [0, 4, 1]);
-    this.train = new THREE.Mesh(tg.build(), this.bMat); this.train.visible = false; this.train.position.x = wx(50); this.scene.add(this.train); this.trainT = -1;
+    this.train = new THREE.Mesh(tg.build(), this.bMat); this.train.visible = false; this.train.position.x = wx(TW - 1); this.scene.add(this.train); this.trainT = -1;
   }
   updateCemetery() {
-    const n = Math.min(2100, Math.floor(this.sim.deaths / 14)), g = this.graves; if (n === this.graveN) return;
-    for (let k = this.graveN || 0; k < n; k++) { const col = k % 20, row = (k / 20) | 0; _q.setFromAxisAngle(_up, (hash(k) - .5) * .5); _m.compose(_p.set(-HX - 2.2 - col * .46, 0, HZ - 1.6 - row * .4), _q, _s.set(1, .8 + hash(k + 3) * .4, 1)); g.setMatrixAt(k, _m); }
+    const n = Math.min(1000, Math.floor(this.sim.deaths / 1.2)), g = this.graves; if (n === this.graveN) return; if (n < (this.graveN || 0)) this.graveN = 0;
+    for (let k = this.graveN || 0; k < n; k++) { const col = k % 20, row = (k / 20) | 0; _q.setFromAxisAngle(_up, (hash(k) - .5) * .5); _m.compose(_p.set(-HX - 2.2 - col * .46, 0, HZ - .6 - row * .42), _q, _s.set(1, .8 + hash(k + 3) * .4, 1)); g.setMatrixAt(k, _m); }
     g.count = n; this.graveN = n; g.instanceMatrix.needsUpdate = true;
   }
   runTrain() { this.trainT = 0; this.train.visible = true; }
@@ -400,8 +395,8 @@ export class World {
     this.streetLabels = [];
     NS_STREETS.forEach((n, k) => { const s = this.label(n, 30, '#f3ecdc'); s.position.set(wx(k * 5), .2, HZ + 1.4); s.userData.h = 1.1; this.streetLabels.push(s); });
     EW_STREETS.forEach((n, k) => { const s = this.label(n, 30, '#f3ecdc'); s.position.set(-HX - 2.4, .2, wz(k * 5)); s.userData.h = 1.1; this.streetLabels.push(s); });
-    this.markLabels = LANDMARKS.map(L => { const i = lotId(L.bx, L.by, L.lx, L.ly); const s = this.label(L.name, 26, '#2a2622', 'rgba(244,236,216,.92)'); s.position.set(wx(this.sim.tx[i]), 2, wz(this.sim.ty[i])); s.userData.h = .8; s.userData.lot = i; return s; });
-    const extra = [['Lake Michigan and downtown', HX + 22, 5, -HZ - 6, 1.6], ["Potter's field", -HX - 6.5, 1.2, HZ - 44, 1], ['Chicago River', HX + 4.6, .6, HZ + 2.5, 1]];
+    this.markLabels = []; this.marks = {};
+    const extra = [['Lake Michigan and downtown', HX + 22, 5, -HZ - 6, 1.6], ["Potter's field", -HX - 6.5, 1.2, -HZ - 1.5, 1], ['Chicago River', HX + 4.6, .6, HZ + 2.5, 1]];
     for (const [t, x, y, z, h] of extra) { const s = this.label(t, 28, '#f3ecdc'); s.position.set(x, y, z); s.userData.h = h; this.streetLabels.push(s); }
     this.hoodLabels = GROUPS.map((g, k) => { if (!k) return null; const s = this.label(HOOD_NAMES[k], 34, '#fff', g.color); s.visible = false; s.userData.h = 1.5; return s; });
   }
@@ -410,11 +405,10 @@ export class World {
     for (let g = 1; g < GROUPS.length; g++) {
       const L = this.hoodLabels[g]; let best = -1, bv = 0;
       for (let k = 0; k < NB; k++) { const v = s.bgPop[k * 7 + g]; if (v > bv && v > s.bPop[k] * .5) { bv = v; best = k; } }
-      if (best < 0 || bv < 120 || s.groupPop[g] < 900) { L.visible = false; continue; }
+      if (best < 0 || bv < 40 || s.groupPop[g] < 150) { L.visible = false; continue; }
       L.visible = true; L.position.set(wx((best % BW) * 5 + 2.5), 3.2, wz(((best / BW) | 0) * 5 + 2.5));
     }
-    if (s.pol.hull && !this.hullRenamed) { this.hullRenamed = true; const old = this.markLabels[2]; const n = this.label('Hull House', 26, '#2a2622', 'rgba(244,236,216,.92)'); n.position.copy(old.position); n.userData.h = .8; n.userData.lot = old.userData.lot; this.scene.remove(old); this.markLabels[2] = n; }
-    for (const m of this.markLabels) if (this.sim.b[m.userData.lot] === T.RUBBLE) m.visible = false;
+    
   }
 
   // ---------- camera and picking ----------
@@ -425,7 +419,7 @@ export class World {
     for (const m of [this.smokeMat, this.fireMat, this.fsmokeMat]) m.uniforms.uScale.value = ps;
   }
   pan(dx, dz) { const c = this.cam, cs = Math.cos(c.yaw), sn = Math.sin(c.yaw); c.tx = clamp(c.tx + dx * cs + dz * sn, -HX - 14, HX + 10); c.tz = clamp(c.tz - dx * sn + dz * cs, -HZ - 6, HZ + 6); }
-  zoom(f) { this.cam.td = clamp(this.cam.td * f, 7, 105); }
+  zoom(f) { this.cam.td = clamp(this.cam.td * f, 6, 75); }
   rotate(a, p = 0) { this.cam.yaw += a; this.cam.pitch = clamp(this.cam.pitch + p, .3, 1.45); }
   flyTo(i, d) { this.cam.tx = wx(this.sim.tx[i]); this.cam.tz = wz(this.sim.ty[i]); if (d) this.cam.td = d; }
   enterStreet(x, z) { const tx = clamp(Math.round((x + HX - .5) / 5) * 5, 0, TW - 1); this.street = { x: wx(tx), z: clamp(z, -HZ + 1, HZ - 1), yaw: Math.PI, pitch: .05 }; this.camera.fov = 68; this.camera.near = .03; this.resize(); }
@@ -460,7 +454,7 @@ export class World {
       if (this.slotT[a.i]) { const P = this.pools[this.slotT[a.i]]; P.mesh.setMatrixAt(this.slotI[a.i], this.matrixFor(a.i, e)); P.mesh.instanceMatrix.needsUpdate = true; }
       if (t >= 1) { this.anims[k] = this.anims[this.anims.length - 1]; this.anims.pop(); }
     }
-    if (this.trainT >= 0) { this.trainT += dt; const t = this.trainT, z0 = -HZ - 26, zs = wz(7); this.train.position.z = t < 4 ? z0 + (zs - z0) * (1 - Math.pow(1 - t / 4, 2)) : t < 6.5 ? zs : zs + Math.pow(t - 6.5, 2) * 4; if (t > 11) { this.trainT = -1; this.train.visible = false; } }
+    if (this.trainT >= 0) { this.trainT += dt; const t = this.trainT, z0 = -HZ - 26, zs = wz(8); this.train.position.z = t < 4 ? z0 + (zs - z0) * (1 - Math.pow(1 - t / 4, 2)) : t < 6.5 ? zs : zs + Math.pow(t - 6.5, 2) * 4; if (t > 11) { this.trainT = -1; this.train.visible = false; } }
     // mood: haze thickens with smoke, the sky goes dark and red during the Great Fire
     this.haze += (clamp(s.smoke / 70, 0, 1) - this.haze) * Math.min(1, dt * .5);
     this.night += (this.nightT - this.night) * Math.min(1, dt * .8);
@@ -469,7 +463,7 @@ export class World {
     const st = !!this.street; this.scene.fog.near = st ? 3 - h * 2 : 70 - h * 30; this.scene.fog.far = st ? 75 - h * 40 : 300 - h * 120;
     this.hemi.intensity = 1.5 * (1 - n * .7) * (1 - h * .22); this.sun.intensity = 2.2 * (1 - n * .92) * (1 - h * .3);
     this.hemi.color.set('#e6eef5').lerp(_c.set('#ff7a30'), n * .8);
-    this.riverMat.color.set('#5e7f8c').lerp(_c.set('#5a5238'), clamp(s.totPop / 26000, 0, 1) * (s.pol.canal ? .5 : 1)).multiplyScalar(1 - n * .6);
+    this.riverMat.color.set('#5e7f8c').lerp(_c.set('#5a5238'), clamp(s.totPop / 3000, 0, 1) * (s.pol.canal ? .5 : 1)).multiplyScalar(1 - n * .6);
     this.agentMat.uniforms.uTint.value.setScalar(1 - n * .6);
     for (const m of [this.smokeMat, this.fireMat, this.fsmokeMat, this.agentMat]) m.uniforms.uTime.value = this.time;
     // camera
@@ -480,14 +474,16 @@ export class World {
       this.camera.position.set(c.x + Math.sin(c.yaw) * cp * c.dist + sx, Math.sin(c.pitch) * c.dist, c.z + Math.cos(c.yaw) * cp * c.dist + sz); this.camera.lookAt(c.x + sx, 0, c.z + sz);
     }
     const ls = this.street ? .02 : c.dist * .021;
-    for (const L of this.streetLabels) { L.visible = !this.street && c.dist > 16; L.scale.set(L.userData.h * L.userData.ar * ls, L.userData.h * ls, 1); }
-    for (const L of this.markLabels) { if (this.sim.b[L.userData.lot] !== T.RUBBLE) L.visible = !this.street && c.dist < 80; L.scale.set(L.userData.h * L.userData.ar * ls, L.userData.h * ls, 1); }
+    for (const L of this.streetLabels) { L.visible = !this.street && c.dist > 9; L.scale.set(L.userData.h * L.userData.ar * ls, L.userData.h * ls, 1); }
+    for (const L of this.markLabels) { L.visible = !this.street && this.sim.b[L.userData.lot] === L.userData.type; L.scale.set(L.userData.h * L.userData.ar * ls, L.userData.h * ls, 1); }
     for (const L of this.hoodLabels) if (L) { if (this.street) L.visible = false; L.scale.set(L.userData.h * L.userData.ar * ls, L.userData.h * ls, 1); }
     this.renderer.render(this.scene, this.camera);
     // drop quality if the machine is struggling
     const f = this.fps; f.n++; f.t += dt; if (f.t > 4) { f.v = f.n / f.t; f.n = 0; f.t = 0; if (f.v < 24 && this.tier < 2 && !document.hidden) { this.tier++; this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, this.Q[this.tier].dpr)); this.resize(); this.rebuildSmoke(); this.rebuildAgents(); } }
   }
-  yearly() { this.recolor(); this.rebuildAgents(); this.rebuildSmoke(); this.updateHoods(); this.setEra(this.sim.year, this.sim.done.fire && this.sim.year < 1873); }
+  yearly() { this.recolor(); this.rebuildAgents(); this.rebuildSmoke(); this.updateHoods(); this.updateCemetery(); }
+  // name tags for the two buildings students should be able to find again
+  mark(lot, name) { if (this.marks[name]) { this.scene.remove(this.marks[name]); this.markLabels.splice(this.markLabels.indexOf(this.marks[name]), 1); } const s = this.label(name, 26, '#2a2622', 'rgba(244,236,216,.92)'); s.position.set(wx(this.sim.tx[lot]), 2, wz(this.sim.ty[lot])); s.userData.h = .8; s.userData.lot = lot; s.userData.type = this.sim.b[lot]; this.marks[name] = s; this.markLabels.push(s); }
 
   // A "Jacob Riis" photograph of whatever the camera sees.
   photo() {
