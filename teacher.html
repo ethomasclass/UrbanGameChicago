@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Teacher Script: The Urban Game: Chicago</title>
+<style>
+  body { font: 16px/1.5 Georgia, "Noto Serif", serif; color: #221d18; background: #f1e7cf; margin: 0; }
+  main { max-width: 800px; margin: 0 auto; padding: 30px 28px 60px; }
+  h1 { font-size: 34px; line-height: 1.05; margin: 0 0 4px; } h2 { font-size: 24px; border-bottom: 3px double #221d18; margin: 34px 0 10px; padding-bottom: 3px; } h3 { font-size: 19px; margin: 20px 0 4px; }
+  .eyebrow, .tag { font: 600 11px system-ui, sans-serif; letter-spacing: .14em; text-transform: uppercase; color: #a8322a; margin: 0; }
+  .read { background: #fbf5e4; border-left: 5px solid #a8322a; padding: 10px 16px; margin: 8px 0; } .read p { margin: 0 0 8px; } .read p:last-child { margin: 0; }
+  .choice { font: 14px/1.4 system-ui, sans-serif; margin: 6px 0 6px 20px; } .choice b { font-family: Georgia, serif; font-size: 15px; }
+  .ask { font: 14.5px/1.45 system-ui, sans-serif; } table { border-collapse: collapse; font: 14px system-ui, sans-serif; width: 100%; } td, th { border-bottom: 1px solid #c9b98f; padding: 5px 8px; text-align: left; vertical-align: top; }
+  .note { font: 14px/1.45 system-ui, sans-serif; color: #5a4f43; } ul { margin: 6px 0; } a { color: #a8322a; }
+  @media print { body { background: #fff; } .read { background: #fff; } h2 { break-after: avoid; } .ev { break-inside: avoid; } .noprint { display: none; } }
+</style>
+</head>
+<body>
+<main>
+<p class="eyebrow">Teacher script and notes</p>
+<h1>The Urban Game: Chicago, 1865 to 1900</h1>
+<p class="note">Students run one copy each of the same West Side ward. Every copy gets the same arrivals, the same events, and the same fire. Only their choices differ, so differences between wards at the end come from decisions. <a class="noprint" href="index.html">Open the game</a> <span class="noprint">|</span> <a class="noprint" href="#" onclick="print();return false">Print this script</a></p>
+
+<h2>Running it</h2>
+<table>
+<tr><th>Two ways to play</th><td><b>On my own:</b> the clock never stops except for newspaper pop-ups. Decisions run on a 45 second countdown and default if ignored.<br><b>With my teacher:</b> the game stops at the end of each of the seven rounds below and waits. You read the round intro, say "begin," students press Begin. At the end of a round the screen shows discussion questions and locks building, but students can still move the camera and switch map views.</td></tr>
+<tr><th>Time</th><td id="timing"></td></tr>
+<tr><th>Groups</th><td>One or two students per Chromebook works best. With pairs, try one "Builder" on the trackpad and one "Commissioner" who watches the meters and reads the newspaper aloud.</td></tr>
+<tr><th>Before class</th><td>Have each Chromebook load the game once while online. After that it will open without a connection. Sound can be switched off on the start screen. A game in progress is saved once per game year on that Chromebook, and the start screen offers to continue it.</td></tr>
+<tr><th>Preview an era</th><td>Add <code>?skip=1871</code> (any year) to the address to jump straight there with default choices. Add <code>?lowgfx</code> if a machine struggles.</td></tr>
+<tr><th>What students control</th><td>They <b>zone</b> land (housing, industry, shops) for free, and builders fill it in as demand allows. They <b>pay</b> for sewers, paving, streetcars, and public buildings. They do not choose what gets built on private land. Unzoned empty land attracts squatter shanties. Crowded lots get rear houses, then tenements, whether students want them or not.</td></tr>
+<tr><th>Map views to call out</th><td><b>Nationalities</b> (compare to the Hull House maps), <b>Crowding</b>, <b>Death risk</b>, <b>Sewers + paving</b>. <b>Street view</b> plus <b>Take photograph</b> lets students document conditions the way Jacob Riis did. Photographs print in their final report.</td></tr>
+<tr><th>The end</th><td>In December 1900 each student gets a printable report: report card, charts, their decisions, their photographs, and written prompts on the environmental, economic, cultural, and social effects of urbanization, ending with a claim on whether urban growth benefited American society.</td></tr>
+</table>
+
+<h2>The script</h2>
+<p class="note">Shaded boxes are read-aloud text. It matches what students see in the newspaper pop-ups, so you can read it or let them read it.</p>
+<div id="script"></div>
+
+<h2>Where the game simplifies history</h2>
+<ul class="ask">
+<li><b>The map</b> is a simplified grid of the Near West Side. Street names are real, but there are fewer of them, and the ward is not drawn to the 19th Ward's legal boundaries.</li>
+<li><b>The Great Fire</b> started on DeKoven Street, as in the game, but the wind carried it across the river within hours and most of the West Side survived. The game lets it burn whatever a student has built in the wind's path, which is usually more than really burned here.</li>
+<li><b>Decisions</b> such as the brick-only fire limits, strike policing, and relief were made by the city council, the mayor, and private charities, not by one ward. The game hands them to students so they feel the trade-offs.</li>
+<li><b>Numbers</b> (population, death rates, crowding, money) come from a model tuned to feel right for the period. They are not historical statistics for the 19th Ward. The citywide figures in the final report (298,977 people in 1870 and 1,698,575 in 1900) are from the census.</li>
+<li><b>Nationalities</b> are limited to seven groups. The real neighborhood was more mixed, and included a small African American community that the game does not model.</li>
+<li><b>Hull House, Johnny Powers, the garbage inspector job, and the 1898 election</b> are real. Students can beat Powers in the game. Hull House never did.</li>
+</ul>
+<p class="note">Please read the event text before using it with students and tell me anything you would word differently.</p>
+</main>
+<script type="module">
+import { ROUNDS, EVENTS, EVENT } from './js/data.js';
+const esc = s => s;
+const box = document.getElementById('script');
+const yrs = ROUNDS.reduce((a, r) => a + r.to - r.from + 1, 0);
+document.getElementById('timing').innerHTML = [['Quick', 30], ['Standard', 45], ['Full period', 60]].map(([n, s]) => `<b>${n}:</b> ${s} seconds per game year, about ${Math.round(yrs * s / 60)} minutes of clock time`).join('<br>') + '<br>Add reading and discussion time on top. Teacher-led with discussion after every round fits best in a block, or across two days (stop after round 3 or 4; the game saves).';
+for (const [k, r] of ROUNDS.entries()) {
+  const evs = EVENTS.filter(e => e.year >= r.from && e.year <= r.to);
+  let h = `<h3>Round ${k + 1}: ${r.name} <span class="tag">${r.from} to ${r.to} &nbsp; ${r.to - r.from + 1} game years</span></h3><p class="tag">Read before students press Begin</p><div class="read"><p>${r.intro}</p></div>`;
+  for (const e of evs) {
+    const list = [e]; if (e.id === 'fire') list.push(EVENT.fireAfter);
+    for (const ev of list) {
+      const body = ev.scriptBody || (typeof ev.body === 'function' ? [] : ev.body);
+      h += `<div class="ev"><p class="tag" style="margin-top:14px">${ev.kicker} &nbsp; pop-up</p><div class="read"><p><b>${ev.head}</b></p>${body.map(p => `<p>${p}</p>`).join('')}</div>`;
+      if (ev.choices) h += ev.choices.map((c, i) => `<div class="choice"><b>${c.label}.</b> ${c.detail}${i === ev.def ? ' <i>(what happens if a solo player lets the timer run out)</i>' : ''}</div>`).join('');
+      h += '</div>';
+    }
+  }
+  h += `<p class="tag" style="margin-top:14px">Stop and discuss</p><ul class="ask">${r.ask.map(q => `<li>${q}</li>`).join('')}</ul>`;
+  box.insertAdjacentHTML('beforeend', h);
+}
+</script>
+</body>
+</html>
