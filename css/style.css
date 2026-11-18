@@ -124,3 +124,25 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
 #card.side .paper { width: 430px; padding: 16px 22px 0; } #card.side .paper h2 { font-size: 25px; margin-bottom: 6px; }
 #card.side .what li { font-size: 14px; padding: 4px 0 4px 22px; } #card.side .fam p { font-size: 14.5px; } #card.side .askq { font-size: 14.5px !important; margin-bottom: 8px; }
 #card.side .big { position: sticky; bottom: 0; margin: 0 -22px; width: calc(100% + 44px); border-radius: 0; box-shadow: 0 -8px 14px rgba(241, 231, 207, .95); }
+
+/* ---------- one thing at a time: the build card ---------- */
+#list { width: 288px; padding: 12px 14px 10px; }
+.lhead { display: flex; justify-content: space-between; align-items: baseline; font: 600 11px var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--ink2); }
+#lnow { display: flex; align-items: center; gap: 10px; margin: 6px 0 4px; animation: slidein .35s cubic-bezier(.2, 1.2, .5, 1); }
+#lnow em { font-style: normal; font-size: 34px; line-height: 1; }
+#lnow h3 { margin: 0; font: 700 21px/1.1 var(--serif); } #lnow small { font: 13px var(--sans); color: var(--ink2); }
+.pips { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 4px; } .pips i { width: 9px; height: 9px; border-radius: 2px; background: #d9c9a0; } .pips i.d { background: var(--red); }
+@keyframes slidein { from { opacity: 0; transform: translateX(-18px); } }
+.voice { display: flex; gap: 9px; align-items: flex-start; margin-top: 8px; padding-top: 8px; border-top: 1px solid #dccfa9; animation: slidein .4s both; } .voice + .voice { animation-delay: .5s; }
+.voice img { width: 46px; height: 55px; flex: none; }
+.voice b { display: block; font: 700 13px var(--sans); } .voice b span { font-weight: 400; color: var(--ink2); }
+.voice q { display: block; font: italic 14.5px/1.32 var(--serif); quotes: "\201C" "\201D"; }
+#tip { margin: 10px 0 8px; min-height: 0; font-size: 13px; color: var(--ink); background: #fff8e6; border-radius: 4px; padding: 5px 8px; }
+#lnext { margin: 7px 2px 0; font-size: 12px; color: var(--ink2); text-align: center; }
+.fam { display: flex; gap: 10px; align-items: flex-start; } .fam img { width: 44px; height: 53px; flex: none; margin-top: 2px; }
+/* ---------- tutorial ---------- */
+#coach { position: fixed; z-index: 25; width: 330px; background: var(--ink); color: var(--paper); border: 2px solid var(--gold); border-radius: 8px; padding: 12px 16px; font: 15px/1.4 var(--sans); box-shadow: 0 10px 40px rgba(0, 0, 0, .6); animation: drop .3s; }
+#coach b { color: var(--gold); } #coach .row { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+#coach button.go { background: var(--gold); color: var(--ink); font-weight: 700; padding: 6px 16px; border-radius: 4px; } #coach button.skip { color: #b9ad94; font-size: 12.5px; text-decoration: underline; }
+#coach.c-mid { left: 50%; bottom: 90px; transform: translateX(-50%); } #coach.c-list { left: 316px; top: 110px; } #coach.c-top { right: 16px; top: 78px; }
+#coach.c-list::before, #coach.c-top::before { content: ""; position: absolute; border: 9px solid transparent; } #coach.c-list::before { left: -20px; top: 22px; border-right-color: var(--gold); } #coach.c-top::before { top: -20px; right: 150px; border-bottom-color: var(--gold); }

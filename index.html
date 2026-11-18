@@ -19,10 +19,12 @@
   </header>
 
   <aside id="list" hidden>
-    <h4>You must build <span id="clock"></span></h4>
-    <div id="items"></div>
+    <div class="lhead"><span id="lstep"></span><span id="clock"></span></div>
+    <div id="lnow"></div>
+    <div id="advice"></div>
     <p id="tip"></p>
     <button id="undo">↩ Undo last</button>
+    <p id="lnext"></p>
   </aside>
 
   <div id="views">
@@ -40,6 +42,7 @@
 </div>
 
 <div id="card" hidden></div>
+<div id="coach" hidden></div>
 
 <div id="start">
   <div class="startcard">
@@ -58,6 +61,7 @@
       <label><input type="radio" name="clock" value="1"> Fast</label>
       <small>If the clock runs out, the builders finish the job wherever they like.</small>
     </div>
+    <label class="chk"><input type="checkbox" id="tutopt" checked> Show me how to play</label>
     <label class="chk"><input type="checkbox" id="sndopt" checked> Sound</label>
     <button id="go" class="big">Begin in 1837</button>
     <button id="resume" class="big ghost" hidden>Continue saved game</button>

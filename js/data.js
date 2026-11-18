@@ -152,7 +152,7 @@ export const JOBS = ['laundry worker', 'lumber shover', 'teamster', 'garment wor
 // happens to them depends on what the student built around that home. c = conditions at their door:
 // sewer, smoke, job, hull, school, park, transit, burned, rear (landlord added a rear house), health.
 export const FAMILIES = [
-  { id: 'malone', name: 'The Malones', start: 1, kind: T.COTTAGE, beats: {
+  { id: 'malone', face: 'bridget', name: 'The Malones', start: 1, kind: T.COTTAGE, beats: {
     1: c => `Michael and Bridget Malone step off a canal boat with a trunk, a fiddle, and a baby. He helped dig the canal. Now it is finished, and so is his job. They rent the first cottage you built this round${c.smoke ? ', downwind of the yards. Bridget says the air tastes like a blacksmith.' : c.job ? ', a short walk from the docks. Michael starts Monday.' : ', a long way from anything. Michael walks an hour each morning to find a day\'s work.'}`,
     2: c => c.sewer ? 'Cholera came down the Malones\' street and passed their door. Bridget credits the new sewer pipe and Saint Patrick, in that order.' : 'The Malones\' youngest, Tommy, two years old, died of cholera in August. It took one day. Bridget kept his shoes.',
     3: c => 'Danny Malone, 17, is home from the Union Army in one piece. ' + (c.smoke ? 'The first thing he says is that the war smelled better than this street.' : c.job ? 'He is hired at the lumber yard by Friday. Bridget cries at both pieces of news.' : 'There is no work near home, so he boards by the river and visits on Sundays.'),
@@ -164,10 +164,64 @@ export const FAMILIES = [
     9: c => c.sewer ? 'Nora Malone spent two days\' wages to ride the Ferris wheel. She says that from the top you cannot see the smoke, only the lake. Michael says that is a great deal of money to not see something.' : 'Typhoid took Michael Malone in the spring. Forty-five years in Chicago, and it was the water that got him. Alderman Powers paid for the funeral. The Malone men will vote for him until they die.',
     10: c => 'Bridget Malone is 77, the last person on the block who remembers the prairie. "It was all grass," she tells the children. "You could hear the frogs." Nobody believes her.' + (c.park ? ' Most afternoons she sits in the new park, facing west.' : ''),
   } },
-  { id: 'rossi', name: 'The Rossis', start: 7, kind: T.WTEN, beats: {
+  { id: 'rossi', face: 'rosa', name: 'The Rossis', start: 7, kind: T.WTEN, beats: {
     7: () => 'Giuseppe and Rosa Rossi arrive from a village near Naples with four children and an address written on a card. Eight people now share three rooms in the first tenement you built this round. Giuseppe sells bananas from a pushcart. He had never seen a banana until last year.',
     8: c => c.hull ? 'Rosa Rossi takes English lessons at Hull House two nights a week. Her first complete sentence is a complaint about the landlord. Her teacher is delighted.' : 'Alderman Powers found Giuseppe Rossi a job sweeping streets. Giuseppe is not sure what an alderman is, but he knows who he is voting for.',
     9: c => !c.sewer ? 'The Rossis\' baby, Antonio, died of typhoid in July. He was the third child on their stairway that month. Rosa has stopped taking in boarders. She says the rooms are full enough.' : c.health < 55 ? 'Lucia Rossi, 12, coughs all winter. The doctor says she needs clean air and rest. Rosa asks him where those are sold.' : 'The factories are on short hours, but Giuseppe\'s pushcart did well outside the Fair. The family ate meat twice in one week. Rosa suspects him of something.',
     10: c => c.reform || c.park ? 'The Rossis have daylight in every room now. Rosa opens all the windows every morning, even in January, because she can.' : 'Lucia Rossi, 19, keeps the family\'s accounts in English and scolds her father in Italian. Giuseppe says America has ruined her. He says it proudly.',
   } },
 ];
+
+// ---------- the cast ----------
+// Everyone who speaks in the game. real: true marks a historical person; the rest are invented.
+// look, beard, collar, and color only shape the placeholder portrait. Set img: true once assets/portraits/<id>.png exists.
+export const CHARACTERS = {
+  pike: { name: 'Harlan Pike', role: 'Mill owner', look: 'top', color: '#c9b38a' },
+  voss: { name: 'Dr. Ada Voss', role: 'Physician', look: 'bun', color: '#a9bcc8' },
+  crane: { name: 'Josiah Crane', role: 'Landlord', look: 'bowler', beard: true, color: '#a7b094' },
+  doyle: { name: 'Marshal Doyle', role: 'Fire marshal', look: 'cap', color: '#d0a08c' },
+  whitlow: { name: 'Miss Whitlow', role: 'Schoolteacher', look: 'bun', color: '#d6c79c' },
+  lund: { name: 'Captain Lund', role: 'Lumber shipper', look: 'cap', beard: true, color: '#8fb4bc' },
+  beck: { name: 'Mr. Beck', role: 'Garment contractor', look: 'bowler', color: '#b5a8c6' },
+  dunne: { name: 'Father Dunne', role: "Pastor of St. Patrick's", look: 'none', collar: true, color: '#aabc9c', real: true },
+  addams: { name: 'Jane Addams', role: 'Founder of Hull House', look: 'bun', color: '#d8b4a4', real: true },
+  powers: { name: 'Johnny Powers', role: 'Alderman', look: 'top', beard: true, color: '#a4bd94', real: true },
+  bridget: { name: 'Bridget Malone', role: 'Your neighbor', look: 'shawl', color: '#96c4a0' },
+  rosa: { name: 'Rosa Rossi', role: 'Your neighbor', look: 'shawl', color: '#9fb4dc' },
+};
+const a = (who, say, from = 0) => ({ who, say, from });
+// Advice for each thing on the build list. The game shows the first two voices who are in the ward by that round (from = round index).
+// They are written to disagree. The game never says who is right.
+export const ADVICE = {
+  [T.COTTAGE]: [a('pike', 'Build them next to the works. A man should hear the whistle from his bed.'), a('voss', 'Build them upwind, and near clean water.')],
+  [T.SHOP]: [a('bridget', 'I will not carry flour a mile through the mud. Put it by the houses.', 1), a('crane', 'A shop wants customers. Put it where the people are.')],
+  [T.CHURCH]: [a('dunne', 'Newcomers settle near their own church. Build it and they will come to it.', 2), a('whitlow', 'People will walk a long way to church. They would rather not.')],
+  [T.DEPOT]: [a('lund', 'By the river, so the rail cars can meet the boats.'), a('voss', 'Trains mean soot and noise. Keep the bedrooms back from the tracks.')],
+  [T.ELEV]: [a('lund', 'It has to touch the rails and the water both.'), a('doyle', 'It is the tallest thing in the ward and it is made of pine. Think about what stands next to it.')],
+  [T.LUMBER]: [a('lund', 'On the water, where the schooners unload.'), a('doyle', 'Nowhere near houses. It is a bonfire waiting for a match.')],
+  [T.WORKSHOP]: [a('pike', 'Near the river and the rails, where the freight is.'), a('bridget', 'Anywhere but upwind of my washing. The wind blows to the northeast.', 1), a('voss', 'The wind blows to the northeast. So will the smoke.')],
+  [T.SALOON]: [a('pike', 'Not next to my gates. I want them sober at six.'), a('crane', 'Put a saloon on the corner and the whole block rents faster.')],
+  sewer: [a('voss', 'Cholera follows the privies. Pipe the blocks where the most people live.'), a('crane', 'Pipe my blocks first. The rents will double.')],
+  [T.STPAT]: [a('dunne', 'Build it where the Irish families are. They paid for it a nickel at a time.')],
+  [T.SCHOOL]: [a('whitlow', 'A six-year-old cannot walk a mile through mud. Put it where the children are.'), a('pike', 'A school near the mill only gives the boys ideas.')],
+  [T.FACTORY]: [a('pike', 'Close to my workers, so nobody is late.'), a('bridget', 'Then you come and breathe it, Mr. Pike.', 1)],
+  [T.GAS]: [a('pike', 'Everyone wants gaslight.'), a('voss', 'And nobody should have to live beside where it is made.')],
+  [T.FIRE]: [a('doyle', 'I can only save what I can reach. What do you most want to keep?')],
+  rear: [a('crane', 'A yard is wasted rent. I can fit a second house back there.'), a('bridget', 'That was my garden.', 1)],
+  [T.BRICK]: [a('crane', 'Brick on the burned lots. It will not burn twice.'), a('bridget', 'And who do you think can pay brick rents?', 1)],
+  [T.WTEN]: [a('crane', 'Tear down a cottage and I can fit five families where one lived.'), a('voss', 'Five families and one privy. Put them on sewered blocks, at least.')],
+  [T.POLICE]: [a('pike', 'Near the factories. That is what needs protecting.'), a('bridget', 'Near the saloons, if you want my opinion.', 1)],
+  line: [a('crane', 'Run it past my lots and watch the prices climb.'), a('voss', 'Run it where it lets people live farther from the smoke.')],
+  [T.SWEAT]: [a('beck', 'Close to the tenements. The girls can come straight from breakfast.'), a('voss', 'Children work those machines. Keep it off your worst blocks, at least.')],
+  [T.MARKET]: [a('bridget', 'Put it where I can walk to it.', 1), a('pike', 'Keep the pushcarts off my street. They block the wagons.')],
+  [T.HULL]: [a('addams', 'We mean to live where we are needed most. Where are your poorest neighbors?'), a('powers', 'Ladies with books. Put them wherever you like. They will not last the winter.')],
+  [T.BOSS]: [a('powers', 'Put me where the voters are, and nobody on that street goes without a job.'), a('addams', 'He will buy this ward one favor at a time.')],
+  [T.BTEN]: [a('crane', 'Forty tenants on one lot. Windows are extra.'), a('rosa', 'We live in the room with no window. Give the next family a block with a sewer, at least.', 8)],
+  [T.BATH]: [a('addams', 'Most of our neighbors have no bathtub. Put it where the tenements are thickest.')],
+  [T.PARK]: [a('addams', 'Put it where the children have nowhere else to play.'), a('crane', 'That lot could hold forty tenants.')],
+  el: [a('crane', 'Fast trains. My lots along the line will be worth a fortune.'), a('rosa', 'It will run past somebody\'s bedroom window. You are choosing whose.', 8)],
+  [T.HOSP]: [a('voss', 'A hospital does the most good where people are sickest. Look at your Health map.')],
+  [T.NEWTEN]: [a('addams', 'A window in every room. Tear down the worst buildings and put these in their place.'), a('crane', 'Fewer tenants on every lot. You are costing me money.')],
+};
+// one plain line on how to place each kind of thing
+export const howTo = k => k === 'sewer' ? 'Click a block.' : k === 'line' || k === 'el' ? 'Click a street.' : k === 'rear' ? 'Click one of your frame cottages.' : k === T.WTEN || k === T.BTEN || k === T.NEWTEN ? 'Click an empty lot, or an older home to replace it.' : k === T.BRICK ? 'Click an empty lot or a burned one.' : 'Click an empty lot.';

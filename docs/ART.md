@@ -1,0 +1,68 @@
+# Art plan for The Urban Game: Chicago
+
+Everything on screen today is drawn by code: emoji icons, CSS panels, and placeholder cameo portraits. This file lists what custom art would replace, in the order that gets the most effect for the least drawing, and how each piece plugs in.
+
+## 1. Portraits (highest value)
+
+Twelve characters speak in the game. Each needs one portrait.
+
+| id | Who | Real person? | Notes |
+| --- | --- | --- | --- |
+| `pike` | Harlan Pike, mill owner | no | Speaks for industry in every era |
+| `voss` | Dr. Ada Voss, physician | no | Speaks for public health |
+| `crane` | Josiah Crane, landlord | no | Speaks for rent |
+| `doyle` | Marshal Doyle, fire marshal | no | |
+| `whitlow` | Miss Whitlow, schoolteacher | no | |
+| `lund` | Captain Lund, lumber shipper | no | |
+| `beck` | Mr. Beck, garment contractor | no | |
+| `dunne` | Father Dunne, St. Patrick's | yes | |
+| `addams` | Jane Addams | yes | Many public-domain photographs exist for reference |
+| `powers` | Alderman Johnny Powers | yes | |
+| `bridget` | Bridget Malone | no | Also the face of the Malone family stories. Ages from about 25 (1848) to 77 (1900) |
+| `rosa` | Rosa Rossi | no | Also the face of the Rossi family stories |
+
+**How to add one:** save it as `assets/portraits/<id>.png`, then add `img: true` to that character in `js/data.js`. Nothing else changes.
+
+**Spec:** portrait orientation, 5:6 (for example 400 by 480 pixels), transparent or plain background. They display at about 46 by 55 pixels in the advice card and could go larger on the history cards, so faces need to read at thumbnail size: strong silhouette, simple shapes, one identifying prop or hat each.
+
+**Later options:** two or three ages for Bridget, a second expression per character (pleased, grim) chosen by how the ward is doing, and portraits for the Malone and Rossi children.
+
+## 2. A look for the whole game
+
+Pick one before drawing anything, because the portraits set it. Three directions that fit the period and print well:
+
+- **Woodcut / newspaper engraving.** Black line on cream, one spot color. Matches Gilded Age papers and the Riis photographs, cheapest to keep consistent, and legible when small.
+- **Cut-paper / flat color.** Matches the blocky 3D buildings and the paper-diorama feel of the original hand-drawn game.
+- **Hull-House map colors.** Borrow the palette of the 1895 nationality maps for the whole interface.
+
+## 3. Interface pieces
+
+| Piece | Replaces | File (proposed) | Size |
+| --- | --- | --- | --- |
+| Build icons, about 30 | Emoji in the build card and history card | `assets/icons/<kind>.svg` | 64 by 64, one color plus accent |
+| Card frame | Plain cream panel with red top bar | `assets/ui/card.svg` or a 9-slice PNG | scalable |
+| Title art | Text-only start screen | `assets/ui/title.png` | about 1200 by 500 |
+| Meter icons, 4 | Text labels (People, Health, Happiness, Have work) | `assets/icons/meter-*.svg` | 32 by 32 |
+| Round header vignettes, 11 | Nothing yet | `assets/rounds/<year>.png` | about 560 by 160, one small scene per round |
+| Family name tags | Text labels over the Malone and Rossi homes | drawn in code from the portrait | n/a |
+| Report masthead | Text heading | `assets/ui/report.png` | about 1600 by 300 |
+
+The icons matter most after portraits: emoji look different on every device and some (the reform tenement, the gas works) have no good match.
+
+## 4. The 3D city
+
+Buildings are built from colored boxes with two small textures (walls and roofs), and the ground from six painted tiles. If hand-painted textures are wanted later:
+
+- `assets/tex/wall-wood.png`, `wall-brick.png`, `roof.png`: 128 by 128, tileable, drawn light so the game can tint them.
+- `assets/tex/ground-*.png`: prairie, mud, plank road, granite block, yard dirt, ash. 128 by 128, tileable.
+- Signs for unique buildings (Powers's saloon, Maxwell Street, Hull House): small PNGs applied to one face.
+
+## 5. Sound
+
+All sound is synthesized. A fire bell, a train whistle, a streetcar gong, and crowd noise would each be one short file in `assets/sound/`.
+
+## Open questions
+
+1. Who draws: you, students, or generated art that you then correct? Student-drawn portraits of the cast could be a project of its own.
+2. Real people: photographs of Addams and Powers exist. Portraits of them should look like them; the invented characters are free.
+3. Which look from section 2?

@@ -21,6 +21,8 @@ Each of the eleven rounds works the same way:
 | `js/world.js` | three.js renderer. |
 | `js/main.js` | Round flow and interface. |
 | `js/report.js` | The printable final report. |
+| `js/portraits.js` | Character portraits (placeholder cameos until real art is added). |
+| `docs/ART.md` | Plan for custom art: portraits, icons, interface, textures. |
 | `tools/bot.mjs` | Headless playthroughs for tuning: `node tools/bot.mjs` |
 
 ## Address options

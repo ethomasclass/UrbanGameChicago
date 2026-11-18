@@ -237,6 +237,9 @@ export class World {
         float bank=smoothstep(0.,1.1,min(p.x-uX.x,uX.y-p.x)); col*=.72+.28*bank; gl_FragColor=vec4(pow(col,vec3(.4545)),1.); }`,
     });
     this.riverMat = { color: this.waterMat.uniforms.uColor.value };
+    // Lake Michigan, beyond downtown
+    this.lakeMat = this.waterMat.clone(); this.lakeMat.uniforms.uColor.value = C('#6d9bb0'); this.lakeMat.uniforms.uX.value = new THREE.Vector2(HX + 46, HX + 900);
+    const lake = new THREE.Mesh(new THREE.PlaneGeometry(420, 900), this.lakeMat); lake.rotation.x = -Math.PI / 2; lake.position.set(HX + 46 + 210, -.03, 0); this.scene.add(lake);
     const riv = new THREE.Mesh(new THREE.PlaneGeometry(8, 900), this.waterMat); riv.rotation.x = -Math.PI / 2; riv.position.set(HX + 4.6, -.02, 0); this.scene.add(riv);
     const gb = new GB();
     for (const row of [0, 2, 4]) { const z = wz(row * 5); gb.box(HX + 4.6, 0, z, 9.4, .12, .8, '#6b5a48').box(HX + 4.6, .12, z - .42, 9.4, .14, .05, '#3a3430').box(HX + 4.6, .12, z + .42, 9.4, .14, .05, '#3a3430').box(HX + 4.6, 0, z, .7, .5, 1.1, '#4a4038').box(HX + 4.6, .5, z, .5, .3, .5, '#5a4a40'); }
@@ -293,6 +296,7 @@ export class World {
     const dt = []; for (let z = -HZ - 26; z < HZ + 26; z += 3.4) for (let x = HX + 10; x < HX + 44; x += 3.4) dt.push({ x, z, h: hash(dt.length + 99), d: x - HX });
     const LM = this.buildLandmarks();
     for (let k = dt.length - 1; k >= 0; k--) if (LM.some(m => Math.abs(m.x - dt[k].x) < 3.4 && Math.abs(m.z - dt[k].z) < 3.4)) dt.splice(k, 1);
+    dt.sort((p, q) => (p.d + p.h * 9) - (q.d + q.h * 9)); this.dtN = Math.round(dt.length * .04); this.dtAnims = [];
     this.dtSpots = dt; const d = this.downtown = new THREE.InstancedMesh(gb.build(), this.bMats, dt.length); d.frustumCulled = false; this.scene.add(d);
     this.setEra(1837, false);
   }
@@ -322,14 +326,19 @@ export class World {
     const t = clamp((year - 1837) / 63, 0, 1), tall = clamp((year - 1875) / 25, 0, 1), m = this.surround, n = Math.floor(this.spots.length * (.02 + .98 * t * t));
     for (let k = 0; k < n; k++) { const p = this.spots[k], age = clamp((n - k) / 200, 0, 1); _m.compose(_p.set(p.x, 0, p.z), _q.identity(), p.h < .32 ? _s.set(0, 0, 0) : _s.set(1.4, .18 + age * (.2 + p.h * .35), 1.4)); m.setMatrixAt(k, _m); }
     m.count = n; m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true;
-    const d = this.downtown;
-    this.dtSpots.forEach((p, k) => {
-      const near = 1 - clamp(p.d / 34, 0, 1);
-      let h = burned ? .15 + p.h * .3 : .7 + p.h * 1.1 + near * .8 + tall * tall * (4 + p.h * 9) * (p.h > .45 ? 1 : .3);
-      _m.compose(_p.set(p.x, 0, p.z), _q.identity(), _s.set(2.1, h, 2.1)); d.setMatrixAt(k, _m);
-      d.setColorAt(k, burned ? _c.setRGB(.05, .045, .04) : _c.copy(TINTS.brick[k % 6]).lerp(C('#d6cfc0'), .62 + p.h * .3));
-    });
-    d.instanceMatrix.needsUpdate = true; d.instanceColor.needsUpdate = true;
+    this.era = { tall, burned }; this.paintDowntown();
+  }
+  // Downtown is only as big as the ward that feeds it: it grows as the student builds.
+  dtHeight(k) { const p = this.dtSpots[k], e = this.era, near = 1 - clamp(p.d / 34, 0, 1); return e.burned ? .15 + p.h * .3 : .7 + p.h * 1.1 + near * .8 + e.tall * e.tall * (4 + p.h * 9) * (p.h > .45 ? 1 : .3); }
+  paintDowntown() {
+    const d = this.downtown, e = this.era;
+    for (let k = 0; k < this.dtN; k++) { const p = this.dtSpots[k]; _m.compose(_p.set(p.x, 0, p.z), _q.identity(), _s.set(2.1, this.dtHeight(k), 2.1)); d.setMatrixAt(k, _m); d.setColorAt(k, e.burned ? _c.setRGB(.05, .045, .04) : _c.copy(TINTS.brick[k % 6]).lerp(C('#d6cfc0'), .62 + p.h * .3)); }
+    d.count = this.dtN; d.instanceMatrix.needsUpdate = true; d.instanceColor.needsUpdate = true;
+  }
+  setCity(n, instant) {
+    const want = Math.round(this.dtSpots.length * clamp(.04 + n / 175, 0, 1)); if (want === this.dtN) return;
+    const was = this.dtN; this.dtN = want; this.paintDowntown();
+    if (!instant) for (let k = was; k < want; k++) { const p = this.dtSpots[k]; this.dtAnims.push({ k, t: -(k - was) * .12 }); _m.compose(_p.set(p.x, 0, p.z), _q.identity(), _s.set(2.1, .001, 2.1)); this.downtown.setMatrixAt(k, _m); }
   }
 
   buildPools() {
@@ -503,7 +512,7 @@ export class World {
     NS_STREETS.forEach((n, k) => { const s = this.label(n, 30, '#f3ecdc'); s.position.set(wx(k * 5), .2, HZ + 1.4); s.userData.h = 1.1; this.streetLabels.push(s); });
     EW_STREETS.forEach((n, k) => { const s = this.label(n, 30, '#f3ecdc'); s.position.set(-HX - 2.4, .2, wz(k * 5)); s.userData.h = 1.1; this.streetLabels.push(s); });
     this.markLabels = []; this.marks = {};
-    const extra = [['Lake Michigan and downtown', HX + 22, 5, -HZ - 6, 1.6], ["Potter's field", -HX - 6.5, 1.2, -HZ - 1.5, 1], ['Chicago River', HX + 4.6, .6, HZ + 2.5, 1]];
+    const extra = [['Downtown Chicago', HX + 24, 5, -HZ - 6, 1.6], ['Lake Michigan', HX + 56, 2, 0, 1.8], ["Potter's field", -HX - 6.5, 1.2, -HZ - 1.5, 1], ['Chicago River', HX + 4.6, .6, HZ + 2.5, 1]];
     for (const [t, x, y, z, h] of extra) { const s = this.label(t, 28, '#f3ecdc'); s.position.set(x, y, z); s.userData.h = h; this.streetLabels.push(s); }
     this.hoodLabels = GROUPS.map((g, k) => { if (!k) return null; const s = this.label(HOOD_NAMES[k], 34, '#fff', g.color); s.visible = false; s.userData.h = 1.5; return s; });
   }
@@ -585,7 +594,12 @@ export class World {
     for (const L of this.markLabels) { L.visible = !this.street && (L.userData.type < 0 ? this.sim.pop[L.userData.lot] > 0 : this.sim.b[L.userData.lot] === L.userData.type); L.scale.set(L.userData.h * L.userData.ar * ls, L.userData.h * ls, 1); }
     for (const k of this.lms) { const L = k.L; L.visible = !this.street && k.m.visible && c.dist > 14; L.scale.set(L.userData.h * L.userData.ar * ls, L.userData.h * ls, 1); }
     if (this.wheel.visible) this.wheel.rotation.z = this.time * .12;
-    this.waterMat.uniforms.uTime.value = this.time;
+    this.waterMat.uniforms.uTime.value = this.lakeMat.uniforms.uTime.value = this.time;
+    for (let q = this.dtAnims.length - 1; q >= 0; q--) { // new downtown buildings rise one after another
+      const a = this.dtAnims[q]; a.t += dt * 1.6; if (a.k >= this.dtN) { this.dtAnims.splice(q, 1); continue; }
+      const t = clamp(a.t, 0, 1), p = this.dtSpots[a.k]; _m.compose(_p.set(p.x, 0, p.z), _q.identity(), _s.set(2.1, Math.max(.001, this.dtHeight(a.k) * (1 - Math.pow(1 - t, 3))), 2.1)); this.downtown.setMatrixAt(a.k, _m); this.downtown.instanceMatrix.needsUpdate = true;
+      if (a.t >= 1) this.dtAnims.splice(q, 1);
+    }
     for (const L of this.hoodLabels) if (L) { if (this.street) L.visible = false; L.scale.set(L.userData.h * L.userData.ar * ls, L.userData.h * ls, 1); }
     this.renderer.render(this.scene, this.camera);
     // drop quality if the machine is struggling
