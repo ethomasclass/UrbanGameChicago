@@ -4,7 +4,7 @@ import { Sim } from './sim.js';
 import { World } from './world.js';
 import { Sound } from './audio.js';
 import { buildReport } from './report.js';
-import { T, B, GROUPS, ROUNDS, QUOTES, JOBS, itemOf } from './data.js';
+import { T, B, GROUPS, ROUNDS, QUOTES, JOBS, FAMILIES, itemOf } from './data.js';
 
 const $ = s => document.querySelector(s);
 const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
@@ -16,7 +16,7 @@ const SAVE_KEY = 'urbangame-chicago-v2';
 const sim = new Sim();
 const world = new World($('#c'), sim, { low: params.has('lowgfx') });
 const snd = new Sound();
-const G = { phase: 'start', name: '', timed: true, active: null, tLeft: 0, tMax: 0, photos: [], before: null, fireAcc: 0, wait: 0, then: null };
+const G = { phase: 'start', name: '', timed: true, clock: 1.6, marks: {}, active: null, tLeft: 0, tMax: 0, photos: [], before: null, fireAcc: 0, wait: 0, then: null };
 window.__game = { sim, world, G };
 
 // ---------- top bar ----------
@@ -34,6 +34,7 @@ function updateHud() {
   setMeter('health', has ? Math.round(s.healthAvg) : 'n/a', s.healthAvg / 100, has ? lvl(s.healthAvg, 55, 70) : 0);
   setMeter('happy', has ? Math.round(s.happy) : 'n/a', s.happy / 100, has ? lvl(s.happy, 40, 55) : 0);
   setMeter('work', has ? Math.round(s.emp * 100) + '%' : 'n/a', s.emp, has ? lvl(s.emp, .65, .85) : 0);
+  $('#clock').textContent = G.phase === 'build' && G.timed ? Math.floor(Math.max(0, G.tLeft) / 60) + ':' + String(Math.floor(Math.max(0, G.tLeft) % 60)).padStart(2, '0') : '';
   const t = $('#timer'); t.hidden = !(G.phase === 'build' && G.timed); if (!t.hidden) { t.firstChild.style.transform = `scaleX(${clamp(G.tLeft / G.tMax, 0, 1)})`; t.classList.toggle('low', G.tLeft < 15); }
   if (G.phase === 'fire') $('#banner').innerHTML = `THE GREAT FIRE<small>${s.burning.length} buildings burning. The wind is from the southwest.</small>`;
   snd.city(clamp(s.totPop / 3500, 0, 1));
@@ -51,7 +52,7 @@ function drawList() {
 }
 function nextItem() { const cur = sim.item(G.active); if (!cur) { const n = sim.todo.find(t => t.left > 0); G.active = n ? n.k : null; } drawList(); }
 $('#undo').onclick = undo;
-function undo() { if (G.phase !== 'build') return; if (sim.undo()) { snd.zone(); const u = sim.todo.find(t => t.left > 0 && t.k !== G.active); if (!sim.item(G.active) && u) G.active = u.k; drawList(); } else toast('Nothing to undo this round.'); }
+function undo() { if (G.phase !== 'build') return; if (sim.undo()) { snd.zone(); remark(); const u = sim.todo.find(t => t.left > 0 && t.k !== G.active); if (!sim.item(G.active) && u) G.active = u.k; drawList(); } else toast('Nothing to undo this round.'); }
 
 // what the active item acts on at this spot: a lot, a block, or a street
 function target(o) {
@@ -66,7 +67,7 @@ function click(e) {
   const tg = target(world.pick(e.clientX, e.clientY)); if (!tg) return;
   const k = G.active, why = sim.place(k, tg.v);
   if (why) { toast(why); snd.err(); return; }
-  snd.place(); if (k === T.HULL) world.mark(tg.v, 'Hull House');
+  snd.place(); remark();
   nextItem(); if (!sim.left()) finishBuild(false);
 }
 
@@ -148,22 +149,22 @@ $('#sound').onclick = () => { snd.setOn(!snd.on); $('#sound').textContent = snd.
 addEventListener('resize', () => world.resize());
 
 // ---------- the round: history, build, what happened ----------
-function card(html, side) { const c = $('#card'); c.className = side ? 'side' : ''; c.innerHTML = `<article class="paper">${html}</article>`; c.hidden = false; return c; }
+function card(html, side) { $('#hover').hidden = true; const c = $('#card'); c.className = side ? 'side' : ''; c.innerHTML = `<article class="paper">${html}</article>`; c.hidden = false; return c; }
 function showBrief(r) {
   G.phase = 'brief'; sim.startRound(r); const R = ROUNDS[r]; $('#list').hidden = true; $('#hover').hidden = true;
-  if (R.fire) world.mark(sim.barn, "O'Leary barn");
+  remark();
   if (sim.b.includes(T.DEPOT)) { world.runTrain(); snd.whistle(); } snd.paper(); updateHud();
   const need = R.build.map(x => `<li><b>${x.n}</b>${itemOf(x.k).icon} ${itemOf(x.k).name}${x.n > 1 && !/s$/.test(itemOf(x.k).name) ? 's' : ''}</li>`).join('');
-  const c = card(`<div class="yrs">Round ${r + 1} of ${ROUNDS.length}</div><h2>${R.year}: ${R.name}</h2><p>${R.story}</p><h4>You must build</h4><ul class="need">${need}</ul><button class="big">Start building</button>`);
+  const c = card(`<div class="yrs">Round ${r + 1} of ${ROUNDS.length}</div><h2>${R.year}: ${R.name}</h2><p>${R.story}</p><p class="scene"><b>On the street:</b> ${R.scene}</p><h4>You must build</h4><ul class="need">${need}</ul><button class="big">Start building</button>`);
   c.querySelector('.big').onclick = startBuild;
 }
 function startBuild() {
   $('#card').hidden = true; G.phase = 'build'; G.before = snapshot(); G.active = sim.todo[0].k; drawList(); $('#list').hidden = false;
-  G.tMax = G.tLeft = 30 + 6 * sim.left(); snd.bell(); updateHud();
+  G.tMax = G.tLeft = (30 + 6 * sim.left()) * G.clock; snd.bell(); updateHud();
 }
 function finishBuild(timedOut) {
   G.phase = 'wait'; $('#list').hidden = true; world.highlight(null);
-  if (timedOut) { toast('Time is up. The builders finished the job wherever they liked.', 4000); const h = sim.b.indexOf(T.HULL); if (h >= 0) world.mark(h, 'Hull House'); }
+  if (timedOut) { toast('Time is up. The builders finished the job wherever they liked.', 4000); remark(); }
   if (ROUNDS[sim.round].fire) { G.wait = 1.6; G.then = startFire; } else { G.wait = .7; G.then = showResult; }
 }
 function startFire() {
@@ -171,9 +172,10 @@ function startFire() {
 }
 function showResult() {
   G.phase = 'result'; const r = sim.round, R = ROUNDS[r], out = sim.endRound(), now = snapshot(), last = r === ROUNDS.length - 1;
-  world.yearly(); world.setEra(R.year, !!R.fire); save(); updateHud(); snd.paper();
+  world.yearly(); world.setEra(R.year, !!R.fire); remark(); save(); updateHud(); snd.paper();
+  const fam = (out.family || []).map(f => `<div class="fam"><h4>${f.name}</h4><p>${f.text}</p></div>`).join('');
   const d = (k, label, suf = '') => { const a = G.before[k], b = now[k], df = Math.round(b - a); return `<div>${label}<b>${fmt(b)}${suf}${df ? `<u class="${df > 0 ? 'up' : 'dn'}">${df > 0 ? '▲' : '▼'}${Math.abs(df)}</u>` : ''}</b></div>`; };
-  const c = card(`<div class="yrs">${R.year} &nbsp; What happened</div><h2>${R.name}</h2><ul class="what">${out.map(o => `<li class="${o.bad ? 'bad' : ''}">${o.t}</li>`).join('')}</ul><div class="deltas">${d('pop', 'People')}${d('health', 'Health')}${d('happy', 'Happiness')}${d('work', 'Have work', '%')}</div><p class="askq"><b>Talk about it:</b> ${R.ask}</p><button class="big">${last ? 'See your final report' : `Go on to ${ROUNDS[r + 1].year}`}</button>`, true);
+  const c = card(`<div class="yrs">${R.year} &nbsp; What happened</div><h2>${R.name}</h2><ul class="what">${out.map(o => `<li class="${o.bad ? 'bad' : ''}">${o.t}</li>`).join('')}</ul><div class="deltas">${d('pop', 'People')}${d('health', 'Health')}${d('happy', 'Happiness')}${d('work', 'Have work', '%')}</div>${fam}<p class="askq"><b>Talk about it:</b> ${R.ask}</p><button class="big">${last ? 'See your final report' : `Go on to ${ROUNDS[r + 1].year}`}</button>`, true);
   c.querySelector('.big').onclick = () => { if (last) finish(); else showBrief(r + 1); };
 }
 
@@ -198,10 +200,16 @@ function frame(now) {
 // ---------- save, start, finish ----------
 function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 2, sim: sim.save(), name: G.name, timed: G.timed, photos: G.photos })); } catch (e) { /* storage blocked or full: keep playing */ } }
 function loadSave() { try { const o = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); return o && o.v === 2 && o.sim.round < ROUNDS.length - 1 ? o : null; } catch (e) { return null; } }
-function remark() { if (sim.barn != null && sim.b[sim.barn] === T.BARN) world.mark(sim.barn, "O'Leary barn"); const h = sim.b.indexOf(T.HULL); if (h >= 0) world.mark(h, 'Hull House'); }
+// name tags on the map: landmark buildings, and the homes of the two families students follow
+function remark() {
+  const want = {};
+  for (let i = 0; i < sim.b.length; i++) { const L = B[sim.b[i]] && B[sim.b[i]].label; if (L) want[L] = i; }
+  for (const F of FAMILIES) if (sim.fam[F.id] != null) want[F.name] = sim.fam[F.id];
+  for (const n in want) if (G.marks[n] !== want[n]) { G.marks[n] = want[n]; world.mark(want[n], n, FAMILIES.some(F => F.name === n)); }
+}
 function begin(saved) {
-  G.name = $('#pname').value.trim(); G.timed = $('#timed').checked; snd.setOn($('#sndopt').checked); $('#sound').textContent = snd.on ? '🔊' : '🔇';
-  if (saved) { sim.load(saved.sim); G.name = saved.name; G.timed = saved.timed; G.photos = saved.photos || []; }
+  G.name = $('#pname').value.trim(); G.clock = +document.querySelector('input[name=clock]:checked').value; G.timed = G.clock > 0; snd.setOn($('#sndopt').checked); $('#sound').textContent = snd.on ? '🔊' : '🔇';
+  if (saved) { sim.load(saved.sim); G.name = saved.name; G.photos = saved.photos || []; }
   const skip = saved ? 0 : Math.min(ROUNDS.length - 1, +params.get('skip') || 0); // ?skip=5 lets the builders play the first five rounds
   for (let r = 0; r < skip; r++) { sim.startRound(r); sim.autoFinish(); if (ROUNDS[r].fire) { sim.startGreatFire(); while (sim.burning.length) sim.fireStep(); } sim.endRound(); }
   if (saved || skip) { world.syncAll(); world.setEra(sim.year, false); remark(); }

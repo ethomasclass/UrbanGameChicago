@@ -19,7 +19,7 @@
   </header>
 
   <aside id="list" hidden>
-    <h4>You must build</h4>
+    <h4>You must build <span id="clock"></span></h4>
     <div id="items"></div>
     <p id="tip"></p>
     <button id="undo">↩ Undo last</button>
@@ -52,7 +52,12 @@
       <li>Then you see what your choices did to the people who live there.</li>
     </ol>
     <label>Your name or group <input id="pname" maxlength="40" placeholder="Name"></label>
-    <label class="chk"><input type="checkbox" id="timed" checked> Timed rounds. If the clock runs out, the builders finish wherever they like.</label>
+    <div class="opt"><span>Round clock</span>
+      <label><input type="radio" name="clock" value="0"> No clock</label>
+      <label><input type="radio" name="clock" value="1.6" checked> Relaxed</label>
+      <label><input type="radio" name="clock" value="1"> Fast</label>
+      <small>If the clock runs out, the builders finish the job wherever they like.</small>
+    </div>
     <label class="chk"><input type="checkbox" id="sndopt" checked> Sound</label>
     <button id="go" class="big">Begin in 1837</button>
     <button id="resume" class="big ghost" hidden>Continue saved game</button>

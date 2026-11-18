@@ -113,3 +113,14 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
   #report { position: static; background: #fff; } .rep { padding: 0; max-width: none; background: #fff; } .rep .btns { display: none; } .rep textarea { border: 1px solid #999; background: #fff; } .rep h2 { break-after: avoid; } .charts figure, .q { break-inside: avoid; }
 }
 @media (max-width: 1100px) { .meter { width: 96px; } #date span { font-size: 14px; } #date b { font-size: 30px; } #dots { display: none; } }
+
+/* ---------- clock, street scenes, family stories ---------- */
+#list h4 { display: flex; justify-content: space-between; align-items: baseline; }
+#clock { font: 700 17px var(--sans); font-variant-numeric: tabular-nums; color: var(--red); }
+#tip b { color: var(--ink); }
+.scene { font-size: 15px !important; font-style: italic; color: var(--ink2); border-left: 3px solid var(--gold); padding-left: 12px; } .scene b { font-style: normal; font-family: var(--sans); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; }
+.fam { background: #fff8e6; border: 1px solid #d9c9a0; border-radius: 4px; padding: 8px 12px 9px; margin: 8px 0; } .fam h4 { margin: 0 0 3px; color: var(--red); } .fam p { margin: 0; font-size: 15.5px; line-height: 1.42; }
+.opt { margin: 10px 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; font: 14px var(--sans); } .opt > span { font: 600 11px var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--ink2); width: 100%; } .opt label { margin: 0; } .opt small { width: 100%; color: var(--ink2); font-size: 12.5px; }
+#card.side .paper { width: 430px; padding: 16px 22px 0; } #card.side .paper h2 { font-size: 25px; margin-bottom: 6px; }
+#card.side .what li { font-size: 14px; padding: 4px 0 4px 22px; } #card.side .fam p { font-size: 14.5px; } #card.side .askq { font-size: 14.5px !important; margin-bottom: 8px; }
+#card.side .big { position: sticky; bottom: 0; margin: 0 -22px; width: calc(100% + 44px); border-radius: 0; box-shadow: 0 -8px 14px rgba(241, 231, 207, .95); }

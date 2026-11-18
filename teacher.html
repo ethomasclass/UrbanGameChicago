@@ -28,7 +28,9 @@
 <tr><th>1. History</th><td>A card gives the year and a few sentences of background, then lists what must be built. Read it aloud (the shaded boxes below are the same text) or let students read it.</td></tr>
 <tr><th>2. Build</th><td>Students press <b>Start building</b>. A list on the left shows what is left to place. They click the map to place each one. Dragging moves the map. Undo takes back the last placement.</td></tr>
 <tr><th>3. What happened</th><td>Newcomers arrive, and the game reports the results in plain sentences: who got sick, who could not reach work, what burned, where squatters built. The four meters update and a discussion question appears. Students press the button to go on.</td></tr>
-<tr><th>Timer</th><td>With <b>Timed rounds</b> checked on the start screen, each build phase has a clock (30 seconds plus 6 per item). If it runs out, "the builders" place whatever is left at random. Uncheck it for an untimed game. To keep the class together, have everyone wait at the What Happened card until you say go.</td></tr>
+<tr><th>Round clock</th><td>Chosen on the start screen: <b>No clock</b>, <b>Relaxed</b> (about 50 seconds plus 10 per item), or <b>Fast</b> (30 seconds plus 6 per item). The time left shows at the top of the build list. If it runs out, "the builders" place whatever is left at random. To keep the class together, have everyone wait at the What Happened card until you say go.</td></tr>
+<tr><th>The two families</th><td>The <b>Malones</b> (Irish, arriving 1848) and the <b>Rossis</b> (Italian, arriving 1882) each move into a home the student builds. After every round the game tells what happened to them, and it depends on what the student put around that home: whether the block has a sewer, whether there is smoke, work, a school, Hull House. A child can live or die on a placement. Ask students to compare their Malones with a neighbor's.</td></tr>
+<tr><th>Advice, not answers</th><td>The game never tells students where to build. Each item on the list comes with advice from people who disagree (the mill owner and the doctor, the landlord and the reformer). Deciding whom to listen to is the point.</td></tr>
 <tr><th>Time needed</th><td id="timing"></td></tr>
 <tr><th>What placement changes</th><td><b>Work:</b> people can walk to a workplace within about 8 lots, or ride from anywhere near a streetcar line. <b>Smoke:</b> drifts northeast from factories, workshops, and the depot and hurts health and happiness. <b>Sewers:</b> protect everyone on the block, most of all in the cholera and typhoid rounds. <b>Fire:</b> spreads northeast from DeKoven Street through anything wooden, more slowly near a fire station, and cannot cross a park or empty ground easily. <b>Schools, churches, shops, parks, the bath, the hospital, Hull House:</b> help the homes close to them.</td></tr>
 <tr><th>What students cannot stop</th><td>The number of newcomers is fixed, so crowding rises no matter what. When it gets bad, landlords add rear houses and squatters put up shanties on their own.</td></tr>
@@ -43,19 +45,21 @@
 <ul>
 <li>The map is a small, simplified piece of the Near West Side. The street names are real; the grid has fewer streets than the real one.</li>
 <li>The Great Fire did start on DeKoven Street, but the wind carried it across the river within hours and most of the West Side survived. The game lets it burn whatever a student has built downwind.</li>
+<li>The Malones and the Rossis are invented, built from the kinds of lives Hull House residents and others recorded. The street scenes on each history card are real, except the mud joke, which was a joke then too.</li>
+<li>Landmarks across the river (the courthouse, the Water Tower, the Home Insurance Building, the Auditorium, the Masonic Temple, the Ferris wheel) appear in roughly the right years but not in their true positions.</li>
 <li>Hull House really stood at Halsted and Polk. The game lets students choose its location so they have to think about who it should serve.</li>
 <li>Population, health, happiness, and work numbers come from a simple model, not from historical statistics. The citywide census figures in the final report are real.</li>
 <li>Only seven nationality groups are modeled. The real neighborhood was more mixed and included a small African American community.</li>
 </ul>
 </main>
 <script type="module">
-import { ROUNDS, itemOf } from './js/data.js';
+import { ROUNDS, FAMILIES, itemOf } from './js/data.js';
 const box = document.getElementById('script');
 const secs = ROUNDS.reduce((a, r) => a + 30 + 6 * r.build.reduce((s, x) => s + x.n, 0), 0);
 document.getElementById('timing').innerHTML = `Eleven rounds. Building time adds up to about ${Math.round(secs / 60)} minutes at most. With reading and a short discussion after each round, plan on a full period. It also splits well across two days: stop after round 5 (the fire) or round 6.`;
 ROUNDS.forEach((r, k) => {
   const need = r.build.map(x => `${x.n} ${itemOf(x.k).name.toLowerCase()}${x.n > 1 && !/s$/.test(itemOf(x.k).name) ? 's' : ''}`).join(', ');
-  box.insertAdjacentHTML('beforeend', `<div class="round"><h3>Round ${k + 1}: ${r.year}. ${r.name}</h3><p class="tag">Read aloud</p><div class="read">${r.story}</div><p class="tag">Students must build</p><p class="note" style="color:#221d18">${need}. Then ${r.arrive.toLocaleString('en-US')} newcomers arrive.${r.fire ? ' <b>The Great Fire starts as soon as building ends.</b>' : ''}${r.epi ? ` <b>${r.epi} strikes at the end of the round.</b>` : ''}${r.econ ? ' <b>Factories run at reduced hours this round.</b>' : ''}</p><p class="tag">Stop and discuss</p><p class="note" style="color:#221d18">${r.ask}</p></div>`);
+  box.insertAdjacentHTML('beforeend', `<div class="round"><h3>Round ${k + 1}: ${r.year}. ${r.name}</h3><p class="tag">Read aloud</p><div class="read">${r.story}<br><br><i>On the street: ${r.scene}</i></div><p class="tag">Students must build</p><p class="note" style="color:#221d18">${need}. Then ${r.arrive.toLocaleString('en-US')} newcomers arrive.${r.fire ? ' <b>The Great Fire starts as soon as building ends.</b>' : ''}${r.epi ? ` <b>${r.epi} strikes at the end of the round.</b>` : ''}${r.econ ? ' <b>Factories run at reduced hours this round.</b>' : ''}</p>${FAMILIES.filter(F => F.start === k).map(F => `<p class="note" style="color:#221d18"><b>${F.name} arrive this round.</b> They move into the first ${itemOf(F.kind).name.toLowerCase()} the student places, and it gets a name tag on the map.</p>`).join('')}<p class="tag">Stop and discuss</p><p class="note" style="color:#221d18">${r.ask}</p></div>`);
 });
 </script>
 </body>

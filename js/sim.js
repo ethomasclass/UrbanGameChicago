@@ -1,6 +1,6 @@
 // The Urban Game: Chicago. The rules. Students place what each round requires; this file works out what happens to the people.
 // No DOM or three.js here. The renderer watches sim.dirty.
-import { BW, BH, TW, TH, NB, NL, T, B, ROUNDS } from './data.js';
+import { BW, BH, TW, TH, NB, NL, T, B, ROUNDS, FAMILIES } from './data.js';
 
 export const lotId = (bx, by, lx, ly) => ((by * BW + bx) << 4) | (ly << 2) | lx;
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -41,7 +41,7 @@ export class Sim {
     this.lines = []; this.P = 0; this.deaths = 0; this.todo = []; this.undoStack = [];
     this.burning = []; this.greatFire = false; this.done = {}; this.pol = { cable: false, hull: false, canal: false };
     this.stats = { burned: 0, gfBurned: 0, gfDead: 0, epiDead: 0, shanties: 0, rears: 0, arrived: 0, auto: 0 };
-    this.hist = []; this.dirty = []; this.groundDirty = true;
+    this.hist = []; this.dirty = []; this.groundDirty = true; this.fam = {}; // family id -> the lot they live on
     this.cov = {}; for (const k of ['fire', 'police', 'school', 'church', 'park', 'bath', 'hosp', 'hull', 'shop', 'saloon', 'transit', 'el']) this.cov[k] = new Uint8Array(NL);
     this.cFire = this.cov.fire;
     this.bgPop = new Float32Array(NB * NG); this.bPop = new Float32Array(NB); this.groupPop = new Float32Array(NG);
@@ -89,6 +89,7 @@ export class Sim {
       this.b[t] = k === 'rear' ? T.REAR : k;
       if (k !== 'rear' && isHome(this.b[t])) this.g[t] = this.pickGroup(t);
       if (k === T.HULL) this.pol.hull = true;
+      for (const F of FAMILIES) if (F.start === this.round && F.kind === k && this.fam[F.id] == null) { this.fam[F.id] = t; u.fam = F.id; }
       this.touch(t);
     }
     it.left--; if (auto) this.stats.auto++; else this.undoStack.push(u);
@@ -99,7 +100,7 @@ export class Sim {
     const u = this.undoStack.pop(); if (!u) return false;
     if (u.k === 'sewer') this.sewer[u.t] = 0;
     else if (u.k === 'line' || u.k === 'el') { const q = this.lines.findIndex(l => l.axis === u.t.axis && l.idx === u.t.idx); if (u.was) this.lines[q].el = false; else this.lines.splice(q, 1); this.linesDirty = true; }
-    else { this.b[u.t] = u.b; this.g[u.t] = u.g; this.touch(u.t); }
+    else { this.b[u.t] = u.b; this.g[u.t] = u.g; this.touch(u.t); if (u.fam) delete this.fam[u.fam]; }
     this.todo.find(t => t.k === u.k).left++; this.groundDirty = true; this.metrics();
     return true;
   }
@@ -128,7 +129,7 @@ export class Sim {
   metrics() {
     const c = this.cov; for (const k in c) c[k].fill(0);
     const stamp = (arr, i, r, add) => { const cx = this.tx[i], cy = this.ty[i]; for (let j = 0; j < NL; j++) { const dx = this.tx[j] - cx, dy = this.ty[j] - cy; if (dx * dx + dy * dy <= r * r) arr[j] = add ? Math.min(9, arr[j] + 1) : 1; } };
-    const which = { [T.FIRE]: c.fire, [T.POLICE]: c.police, [T.SCHOOL]: c.school, [T.CHURCH]: c.church, [T.PARK]: c.park, [T.BATH]: c.bath, [T.HOSP]: c.hosp, [T.HULL]: c.hull, [T.SHOP]: c.shop, [T.SALOON]: c.saloon };
+    const which = { [T.FIRE]: c.fire, [T.POLICE]: c.police, [T.SCHOOL]: c.school, [T.CHURCH]: c.church, [T.PARK]: c.park, [T.BATH]: c.bath, [T.HOSP]: c.hosp, [T.HULL]: c.hull, [T.SHOP]: c.shop, [T.SALOON]: c.saloon, [T.MARKET]: c.shop, [T.BOSS]: c.saloon, [T.STPAT]: c.church };
     this.poll.fill(0); const work = []; let jobs = 0, cap = 0;
     for (let i = 0; i < NL; i++) {
       const b = this.b[i]; if (!b) continue; const d = B[b];
@@ -207,7 +208,18 @@ export class Sim {
     const born = this.P * .024 * span; dead += epi;
     this.deaths += dead; this.P = Math.max(0, this.P + born - dead);
     say(`About ${fmt(dead)} of your people died in these years.`, dead > this.P * .1);
-    while (out.length > 6) { let q = 0; for (let k = 1; k < out.length; k++) if (out[k].pri < out[q].pri) q = k; out.splice(q, 1); } // keep the card short
+    // the families: find them (they move if their home is gone) and tell what this round did to them
+    const family = [];
+    for (const F of FAMILIES) {
+      let i = this.fam[F.id]; if (i == null || !F.beats[this.round]) continue;
+      const c = { burned: this.b[i] === T.RUBBLE, moved: false };
+      if (!isHome(this.b[i])) { let bd = 1e9, best = -1; for (let j = 0; j < NL; j++) if (isHome(this.b[j])) { const d = Math.hypot(this.tx[j] - this.tx[i], this.ty[j] - this.ty[i]); if (d < bd) { bd = d; best = j; } } if (best < 0) continue; c.moved = !c.burned; i = this.fam[F.id] = best; }
+      const b = this.b[i], cv = this.cov;
+      Object.assign(c, { sewer: !!this.sewer[this.blk[i]], smoke: this.poll[i] > .9, job: this.jobLot[i] > .5, health: this.health[i], hull: !!cv.hull[i], school: !!cv.school[i], park: !!cv.park[i], transit: !!cv.transit[i], rear: b === T.REAR, reform: b === T.NEWTEN });
+      family.push({ id: F.id, name: F.name, lot: i, text: (c.moved ? 'Their old home is gone, so they have moved in down the street. ' : '') + F.beats[this.round](c) });
+    }
+    out.family = family;
+    while (out.length > (family.length > 1 ? 4 : 5)) { let q = 0; for (let k = 1; k < out.length; k++) if (out[k].pri < out[q].pri) q = k; out.splice(q, 1); } // keep the card short
     this.metrics();
     this.hist.push({ y: R.year, name: R.name, pop: Math.round(this.P), crowd: +this.crowd.toFixed(2), health: Math.round(this.healthAvg), happy: Math.round(this.happy), emp: Math.round(this.emp * 100), smoke: Math.round(this.smoke), dead: Math.round(dead), g: Array.from(this.groupPop, Math.round) });
     return out;
@@ -252,11 +264,11 @@ export class Sim {
   where(i) { const k = this.blk[i]; return ['Halsted', 'Desplaines', 'Jefferson', 'Clinton', 'Canal'][k % BW] + ' near ' + ['Van Buren', 'Harrison', 'Polk', 'Taylor'][(k / BW) | 0]; }
 
   save() {
-    const o = {}; for (const k of ['rs', 'round', 'year', 'P', 'deaths', 'lines', 'stats', 'hist', 'done', 'pol', 'barn']) o[k] = this[k];
+    const o = {}; for (const k of ['rs', 'round', 'year', 'P', 'deaths', 'lines', 'stats', 'hist', 'done', 'pol', 'barn', 'fam']) o[k] = this[k];
     for (const k of ['b', 'g', 'lock', 'sewer']) o[k] = Array.from(this[k]); return o;
   }
   load(o) {
-    for (const k of ['rs', 'round', 'year', 'P', 'deaths', 'lines', 'stats', 'hist', 'done', 'pol', 'barn']) this[k] = o[k];
+    for (const k of ['rs', 'round', 'year', 'P', 'deaths', 'lines', 'stats', 'hist', 'done', 'pol', 'barn', 'fam']) this[k] = o[k];
     for (const k of ['b', 'g', 'lock', 'sewer']) this[k].set(o[k]);
     this.dirty = []; this.groundDirty = true; this.linesDirty = true; this.metrics();
   }
