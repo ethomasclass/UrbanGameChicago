@@ -204,6 +204,10 @@ export class Sim {
     if (R.epi) { say(`${R.epi} killed about ${Math.round(epi)} of your people. ${Math.round(epiNo)} of them lived on blocks without sewers.`, true); this.stats.epiDead += epi; }
     if (smoky > 2) say(`Factory and coal smoke hangs over ${smoky} of your ${homes} homes.`, true, 1);
     if (this.emp < .9) say(far > 2 && this.econ >= 1 ? `Only ${Math.round(this.emp * 100)}% of workers have jobs. ${far} homes are too far from any workplace to walk.` : `Only ${Math.round(this.emp * 100)}% of workers have jobs${this.econ < 1 ? ' while the factories run short shifts' : ''}.`, true);
+    if (this.pol.hull && this.round >= 8) { // what Hull House is doing for the homes it can reach
+      let n = 0; for (let i = 0; i < NL; i++) if (this.pop[i] > 0 && this.cov.hull[i]) n++;
+      say(`Hull House is within walking distance of ${n} of your ${homes} homes. ` + ['Their small children are in its kindergarten and day nursery while the parents work, and the adults learn English there at night.', 'Its residents have just helped win a state law keeping children under fourteen out of factories, and they are opening the city\'s first public playground.', 'Its residents have pushed the city into building public baths and the first juvenile court in the country.'][this.round - 8]);
+    }
     if (this.round >= 2 && noSew > homes * .4 && !R.epi) say(`${noSew} of your ${homes} homes still have no sewer or clean water.`, true, 0);
     const born = this.P * .024 * span; dead += epi;
     this.deaths += dead; this.P = Math.max(0, this.P + born - dead);

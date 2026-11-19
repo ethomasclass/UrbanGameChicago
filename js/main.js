@@ -4,7 +4,7 @@ import { Sim } from './sim.js';
 import { World } from './world.js';
 import { Sound } from './audio.js';
 import { buildReport } from './report.js';
-import { T, B, GROUPS, ROUNDS, QUOTES, JOBS, FAMILIES, CHARACTERS, ADVICE, howTo, itemOf } from './data.js';
+import { T, B, GROUPS, ROUNDS, QUOTES, JOBS, FAMILIES, CHARACTERS, ADVICE, SKYLINE, PLACED, howTo, itemOf } from './data.js';
 import { portrait, icon, loadArt, ART } from './portraits.js';
 await loadArt();
 
@@ -62,7 +62,7 @@ function drawList() {
 }
 function nextItem() { drawList(); }
 $('#undo').onclick = undo;
-function undo() { if (G.phase !== 'build') return; if (sim.undo()) { snd.zone(); remark(); drawList(); } else toast('Nothing to undo this round.'); }
+function undo() { if (G.phase !== 'build' || G.hold) return; if (sim.undo()) { snd.zone(); remark(); drawList(); } else toast('Nothing to undo this round.'); }
 
 // ---------- tutorial: five short pointers the first time through ----------
 const COACH = [
@@ -88,11 +88,16 @@ function target(o) {
   return k === 'sewer' ? { kind: 'block', v: sim.blk[lot] } : { kind: 'lot', v: lot };
 }
 function click(e) {
-  if (G.phase !== 'build' || world.street) return;
+  if (G.phase !== 'build' || world.street || G.hold) return;
   const tg = target(world.pick(e.clientX, e.clientY)); if (!tg) return;
   const k = G.active, why = sim.place(k, tg.v);
   if (why) { toast(why); snd.err(); return; }
   snd.place(); remark();
+  const L = PLACED[k];
+  if (L && tg.kind === 'lot') { // a landmark: stop the clock, go look at it, then pick up where we left off
+    const cam = [world.cam.tx, world.cam.tz, world.cam.td]; G.hold = true; world.highlight(null); world.flyTo(tg.v, 13);
+    return callout(L, `${sim.year} &nbsp; A landmark for your ward`, () => { G.hold = false; [world.cam.tx, world.cam.tz, world.cam.td] = cam; $('#list').hidden = false; nextItem(); if (!sim.left()) finishBuild(false); });
+  }
   nextItem(); if (!sim.left()) finishBuild(false);
 }
 
@@ -175,7 +180,26 @@ addEventListener('resize', () => world.resize());
 
 // ---------- the round: history, build, what happened ----------
 function card(html, side) { $('#hover').hidden = true; const c = $('#card'); c.className = side ? 'side' : ''; c.innerHTML = `<article class="paper">${html}</article>`; c.hidden = false; return c; }
+// ---------- landmark callouts: fly the camera there, show a card, then carry on ----------
+function callout(L, kicker, then) {
+  const art = ART.landmarks.includes(L.id) ? `<img class="banner" src="assets/landmarks/${L.id}.jpg" alt="">` : '';
+  $('#list').hidden = true; snd.bell();
+  const c = card(`${art}<div class="yrs">${kicker}</div><h2>${L.title}</h2><p>${L.text}</p><button class="big">Continue</button>`, true);
+  c.querySelector('.big').onclick = () => { c.hidden = true; then(); };
+}
 function showBrief(r) {
+  const R = ROUNDS[r], before = r ? ROUNDS[r - 1].year : 0, cam = [world.cam.tx, world.cam.tz, world.cam.td, world.cam.pitch];
+  G.phase = 'brief'; $('#hover').hidden = true; world.setEra(R.year, false); updateHud();
+  const queue = SKYLINE.filter(L => L.year > before && L.year <= R.year);
+  const next = () => {
+    const L = queue.shift();
+    if (!L) { [world.cam.tx, world.cam.tz, world.cam.td, world.cam.pitch] = cam; return briefCard(r); }
+    if (!world.flyToLandmark(L.label)) return next();
+    callout(L, `${L.year} &nbsp; Rising across the river`, next);
+  };
+  next();
+}
+function briefCard(r) {
   G.phase = 'brief'; sim.startRound(r); const R = ROUNDS[r]; $('#list').hidden = true; $('#hover').hidden = true;
   remark();
   if (sim.b.includes(T.DEPOT)) { world.runTrain(); snd.whistle(); } snd.paper(); updateHud();
@@ -213,7 +237,7 @@ function frame(now) {
   if (G.phase !== 'start') {
     handleKeys(dt);
     if (G.coach != null && COACH[G.coach].wait && COACH[G.coach].wait()) coach(G.coach + 1);
-    if (G.phase === 'build' && G.timed && G.coach == null && (G.tLeft -= dt) <= 0) { sim.autoFinish(); snd.err(); finishBuild(true); }
+    if (G.phase === 'build' && G.timed && G.coach == null && !G.hold && (G.tLeft -= dt) <= 0) { sim.autoFinish(); snd.err(); finishBuild(true); }
     if (G.phase === 'wait' && (G.wait -= dt) <= 0) { const f = G.then; G.then = null; f(); }
     if (G.phase === 'fire') {
       if ((G.fireAcc += dt) > .24) { G.fireAcc = 0; sim.fireStep(); }

@@ -121,6 +121,29 @@ Template: *"A wide scene: [scene]. Seen from a distance, small figures, strong h
 | `1893` | a gleaming white domed exposition and a giant Ferris wheel in the distance, dark crowded tenements in the foreground |
 | `1900` | a crowded street of tenements at dawn with one small new park of trees in the middle |
 
+## Landmark hero shots (14 images)
+
+When a landmark goes up, the camera flies to it and a card explains it. A hero shot fills the top of that card. Aspect ratio **16:9**. Save into `art/raw/landmarks/`.
+
+Template: *"A dramatic low-angle view of [landmark], Chicago, [year], with small period figures and horse-drawn wagons at its base for scale. Golden late-afternoon light."* then the style block. For real buildings, attach a period photograph or engraving as a reference so the architecture is right.
+
+| File name | Landmark |
+| --- | --- |
+| `elevators` | tall wooden grain elevators on a river, a lake schooner loading alongside, 1848 |
+| `courthouse` | the domed stone Chicago courthouse of the 1850s with a bell tower |
+| `stockyards` | the limestone gate of the Union Stock Yards with cattle pens stretching to the horizon, 1865 |
+| `watertower` | the Chicago Water Tower, a castle-like limestone tower with turrets, 1869 |
+| `homeinsurance` | the ten-story Home Insurance Building, an early skyscraper, 1885 |
+| `dearborn` | Dearborn Station, a red brick railroad terminal with a tall clock tower, 1885 |
+| `auditorium` | the Auditorium Building, a massive granite block with a square tower, 1889 |
+| `masonic` | the Masonic Temple, a twenty-story tower with a steep gabled roof, 1892 |
+| `ferris` | the giant Ferris wheel of the 1893 World's Fair above white exposition buildings |
+| `elevator` | a single wooden grain elevator beside railroad tracks in a neighborhood of small cottages |
+| `stpatricks` | St. Patrick's Church, cream brick with two front towers, Irish families on the steps, 1856 |
+| `maxwell` | Maxwell Street market crowded with pushcarts, awnings, and shoppers, 1880s |
+| `powers` | a corner saloon at night with warm light in the windows and men in derby hats at the door, 1889 |
+| `hullhouse` | Hull House, a brick Italianate mansion with a white porch, children on the steps and tenements pressing in on both sides, 1890 |
+
 ## Title art (1 image)
 
 Aspect ratio **16:9**. Save as `art/raw/ui/title`.

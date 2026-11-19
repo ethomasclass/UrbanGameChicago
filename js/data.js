@@ -57,7 +57,7 @@ export const B = {
   [T.PARK]: { icon: '🌳', name: 'Small park', cap: 0, jobs: 0, flam: 0, poll: 0, r: 3, note: 'Grass, trees, and air.', tip: '<b>Reformer:</b> "Put it where the children have nowhere else to play." <b>Landlord:</b> "That lot could hold forty tenants."' },
   [T.BATH]: { icon: '🛁', name: 'Public bath', cap: 0, jobs: 4, flam: 0.2, poll: 0, r: 4, note: 'Most tenement families have no bathtub.', tip: 'Helps the health of homes nearby.' },
   [T.HOSP]: { icon: '🏥', name: 'County Hospital', label: 'County Hospital', cap: 0, jobs: 25, flam: 0.2, poll: 0, r: 8, note: 'Care for the sick and injured.', tip: 'Helps the health of a wide area.' },
-  [T.HULL]: { icon: '🏛️', name: 'Hull House', label: 'Hull House', cap: 0, jobs: 6, flam: 0.3, poll: 0, r: 7, note: 'A settlement house: kindergarten, night classes, clubs, and a door that is always open.', tip: 'Jane Addams chose to live among the poorest families. Where are yours?' },
+  [T.HULL]: { icon: '🏛️', name: 'Hull House', label: 'Hull House', cap: 0, jobs: 6, flam: 0.3, poll: 0, r: 7, note: 'A settlement house. Kindergarten and day nursery, night classes in English, a public bath, cheap hot meals, clubs, a job bureau, and a door that is always open.', tip: 'Jane Addams chose to live among the poorest families. Where are yours?' },
   [T.DEPOT]: { icon: '🚂', name: 'Rail depot', label: 'The Depot', cap: 0, jobs: 30, flam: 0.3, poll: 0.8, note: 'Where the newcomers step off the train.', tip: '<b>Railroad man:</b> "By the river, to meet the boats." Trains bring people, freight, noise, and soot.' },
   [T.BARN]: { name: "O'Leary barn", label: "O'Leary barn", cap: 0, jobs: 0, flam: 2, poll: 0, note: 'Catherine O\'Leary keeps five cows here and sells milk to her neighbors.' },
 };
@@ -117,7 +117,7 @@ export const ROUNDS = [
     ask: 'Turn on the Nationalities map. Did you plan those neighborhoods? Who did?',
     scene: 'One branch of the river near the stock yards is so full of rotting waste that it bubbles. Chicagoans name it Bubbly Creek. Chickens are said to walk across it.' },
   { year: 1889, name: 'The Boss and Hull House', arrive: 700, mix: LATE,
-    story: 'Alderman Johnny Powers, a saloon keeper, runs your ward. He finds jobs for his voters and sells city contracts to the highest bidder. This fall Jane Addams and Ellen Gates Starr move into the neighborhood to open a settlement house.',
+    story: 'Alderman Johnny Powers, a saloon keeper, runs your ward. He finds jobs for his voters and sells city contracts to the highest bidder. This fall Jane Addams and Ellen Gates Starr move into the neighborhood to open a settlement house: a place where educated, well-off volunteers live among the poor as neighbors and offer whatever the neighborhood turns out to need.',
     build: [n(T.HULL, 1), n(T.BOSS, 1), n(T.BTEN, 10), n(T.BATH, 1), n(T.PARK, 2), n(T.SALOON, 1), n(T.SCHOOL, 1)],
     ask: 'Powers was corrupt. Why did so many neighbors vote for him anyway? What could Hull House do that the city was not doing?',
     scene: 'For Hull House\'s first evening gathering, Ellen Starr reads a long English novel aloud, in Italian, to the neighbors. The neighbors are very polite about it.' },
@@ -225,3 +225,36 @@ export const ADVICE = {
 };
 // one plain line on how to place each kind of thing
 export const howTo = k => k === 'sewer' ? 'Click a block.' : k === 'line' || k === 'el' ? 'Click a street.' : k === 'rear' ? 'Click one of your frame cottages.' : k === T.WTEN || k === T.BTEN || k === T.NEWTEN ? 'Click an empty lot, or an older home to replace it.' : k === T.BRICK ? 'Click an empty lot or a burned one.' : 'Click an empty lot.';
+
+// ---------- landmark callouts ----------
+// When one of these goes up, the camera flies to it and a card explains what it is.
+// Hero art, if it exists, comes from assets/landmarks/<id>.jpg (see docs/FLOW.md).
+// Skyline landmarks appear on their own across the river in the given year. label must match the name used in world.js.
+export const SKYLINE = [
+  { id: 'elevators', label: 'Grain elevators', year: 1848, title: 'The Grain Elevators',
+    text: 'Steam-powered towers that lift prairie wheat out of rail cars and pour it into lake ships. Chicago worked out how to grade grain and store it in bulk instead of in sacks, and that made the city the grain market of the world.' },
+  { id: 'courthouse', label: 'Courthouse', year: 1853, title: 'The Courthouse',
+    text: 'Chicago\'s courthouse and city hall, with a bell in its tower to warn the city of fire. On the night of the Great Fire the bell will ring until the tower itself burns.' },
+  { id: 'stockyards', label: 'Union Stock Yards, 4 miles south', year: 1865, title: 'The Union Stock Yards',
+    text: 'Hundreds of acres of pens, rail spurs, and packing houses on the prairie south of the city. Cattle and hogs arrive from the whole West and leave as meat for the whole East. Tens of thousands of immigrants will work here.' },
+  { id: 'watertower', label: 'Water Tower', year: 1869, title: 'The Water Tower',
+    text: 'A limestone tower built to hide a tall standpipe in the city\'s new water system, which draws lake water through a tunnel two miles long. In two years it will be one of the only buildings in the fire\'s path left standing.' },
+  { id: 'homeinsurance', label: 'Home Insurance Building', year: 1885, title: 'The First Skyscraper',
+    text: 'Ten stories tall, and held up by a metal frame instead of thick stone walls. Many people call the Home Insurance Building the first skyscraper. Land downtown has become so expensive that the only direction left to build is up.' },
+  { id: 'dearborn', label: 'Dearborn Station', year: 1885, title: 'Dearborn Station',
+    text: 'One of Chicago\'s great railroad terminals, straight across the river from your ward. Many of the newcomers who will crowd into your tenements take their first steps in Chicago under this clock tower.' },
+  { id: 'auditorium', label: 'Auditorium', year: 1889, title: 'The Auditorium',
+    text: 'A theater, a hotel, and an office tower in one building, designed by Dankmar Adler and Louis Sullivan. For now its tower is the highest point in Chicago. A seat at the opera here costs more than a tenement family earns in a week.' },
+  { id: 'masonic', label: 'Masonic Temple', year: 1892, title: 'The Masonic Temple',
+    text: 'More than twenty stories, the tallest building in Chicago, with shops stacked around an open court and an observation deck on the roof. From up there your ward is a patch of smoke to the southwest.' },
+  { id: 'ferris', label: 'Ferris Wheel at the Fair, 6 miles south', year: 1893, title: 'The Ferris Wheel',
+    text: 'George Ferris built it for the World\'s Fair as America\'s answer to the Eiffel Tower. It is 264 feet tall and carries more than two thousand riders at a time. From the top they can see the White City, the lake, and a long gray smudge to the north, which is the rest of Chicago.' },
+];
+// Landmarks the student places: the card appears the moment they set it down.
+export const PLACED = {
+  [T.ELEV]: { id: 'elevator', title: 'Your Grain Elevator', text: 'The tallest thing in your ward. Wheat from Illinois and Iowa farms comes in by rail, rides a steam-driven belt to the top, and pours down into lake schooners bound for Buffalo and New York. Everything about it is made of dry pine.' },
+  [T.STPAT]: { id: 'stpatricks', title: "St. Patrick's Church", text: 'Irish immigrants paid for this church themselves, a few cents at a time, and built much of it with their own hands. It will survive the Great Fire. It is still standing today, the oldest public building in Chicago.' },
+  [T.MARKET]: { id: 'maxwell', title: 'Maxwell Street Market', text: 'Pushcarts and stalls where newly arrived Jewish families from Eastern Europe sell herring, hats, pots, and secondhand shoes, and bargain in six languages. A newcomer with no money and no English can start a business here with a cart. People will keep doing that on this street for a hundred years.' },
+  [T.BOSS]: { id: 'powers', title: "Powers's Saloon", text: 'Johnny Powers will run this ward from behind a bar for almost forty years. He finds city jobs for his voters, posts their bail, pays for their funerals, and hands out turkeys at Christmas. He pays for it by selling the ward\'s streetcar and gas contracts to the highest bidder.' },
+  [T.HULL]: { id: 'hullhouse', title: 'Hull House', text: 'Jane Addams and Ellen Gates Starr moved in to live as neighbors among the ward\'s immigrant families and offer whatever turned out to be needed. Within a few years that meant a kindergarten and a day nursery for working mothers, night classes in English and citizenship, a public bath, a coffee house with cheap hot meals, a gymnasium, children\'s clubs, an art gallery, a job bureau, and a boarding club for young working women.</p><p>The residents also went door to door. They mapped who lived on every block and what they earned, inspected sweatshops and garbage-choked alleys, and used what they found to win a child labor law, the city\'s first public playground, and the first juvenile court in the country.' },
+};

@@ -20,7 +20,7 @@ function cameo(c) {
   return 'data:image/svg+xml,' + encodeURIComponent(svg);
 }
 // assets/manifest.json lists the real art that exists (tools/art.py writes it). Everything else falls back to a placeholder.
-export const ART = { portraits: [], icons: [], rounds: [], ui: [] };
+export const ART = { portraits: [], icons: [], rounds: [], ui: [], landmarks: [] };
 export async function loadArt() { try { const r = await fetch('assets/manifest.json', { cache: 'no-cache' }); if (r.ok) Object.assign(ART, await r.json()); } catch (e) { /* no art yet */ } }
 // Characters can have later-life portraits named <id>-2 (from 1871) and <id>-3 (from 1889).
 export function portrait(id, round = 0) {

@@ -43,7 +43,7 @@ def files(kind):
     return sorted(p for p in d.iterdir() if p.suffix.lower() in EXT) if d.exists() else []
 
 def main():
-    man = {'portraits': [], 'icons': [], 'rounds': [], 'ui': []}
+    man = {'portraits': [], 'icons': [], 'rounds': [], 'ui': [], 'landmarks': []}
     for p in files('portraits'):     # 3:4 waist-up figure; a taller image keeps its top so the head is never cut
         im = crop_to(Image.open(p).convert('RGB'), 3 / 4, top_bias=0.05).resize((540, 720), Image.LANCZOS)
         im.save(OUT / 'portraits' / f'{p.stem.lower()}.jpg', quality=88); man['portraits'].append(p.stem.lower())
@@ -53,6 +53,9 @@ def main():
     for p in files('rounds'):        # wide banner across the top of a history card
         im = crop_to(Image.open(p).convert('RGB'), 3.2).resize((1120, 350), Image.LANCZOS)
         im.save(OUT / 'rounds' / f'{p.stem.lower()}.jpg', quality=85); man['rounds'].append(p.stem.lower())
+    for p in files('landmarks'):     # hero shot across the top of a landmark card
+        im = crop_to(Image.open(p).convert('RGB'), 16 / 9).resize((1120, 630), Image.LANCZOS)
+        im.save(OUT / 'landmarks' / f'{p.stem.lower()}.jpg', quality=86); man['landmarks'].append(p.stem.lower())
     for p in files('ui'):            # title art and anything else: just made a sensible size
         im = Image.open(p).convert('RGB'); im.thumbnail((1600, 1600), Image.LANCZOS)
         im.save(OUT / 'ui' / f'{p.stem.lower()}.jpg', quality=86); man['ui'].append(p.stem.lower())

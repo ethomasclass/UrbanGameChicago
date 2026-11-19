@@ -307,7 +307,7 @@ export class World {
   // Real Chicago landmarks that rise (and burn, and rise again) across the river as the years pass.
   buildLandmarks() {
     this.lms = [];
-    const add = (name, from, to, x, z, top, build, burns) => { const m = new THREE.Mesh(build(new GB()).build(), this.bMats); m.position.set(x, 0, z); m.visible = false; this.scene.add(m); const L = this.label(name, 24, '#f3ecdc'); L.position.set(x, top + 1.2, z); L.userData.h = 1.15; L.visible = false; this.lms.push({ m, L, from, to, x, z, burns }); };
+    const add = (name, from, to, x, z, top, build, burns) => { const m = new THREE.Mesh(build(new GB()).build(), this.bMats); m.position.set(x, 0, z); m.visible = false; this.scene.add(m); const L = this.label(name, 24, '#f3ecdc'); L.position.set(x, top + 1.2, z); L.userData.h = 1.15; L.visible = false; this.lms.push({ name, top, m, L, from, to, x, z, burns }); };
     add('Grain elevators', 1848, 1900, AX(60), AZ(-290), 5, g => g.box(0, 0, 0, 1.8, 4, 3.2, '#b89a6a', [0, 0, 1]).box(0, 4, 0, .8, 1, 3.2, '#a88a5c', [1, 6, 1]).roof(0, 5, 0, .9, .3, 3.3, '#5a5148', 'z').box(0, 0, 4.6, 1.8, 3.2, 2.6, '#b0926a', [0, 0, 1]).box(0, 3.2, 4.6, .8, .9, 2.6, '#a88a5c', [1, 5, 1]).roof(0, 4.1, 4.6, .9, .3, 2.7, '#5a5148', 'z'), true);
     add('Courthouse', 1853, 1871, AX(-120), AZ(-125), 5.6, g => g.box(0, 0, 0, 3, 1.8, 4.4, '#d8d0bc', [5, 7, 2]).box(0, 1.8, 0, 3.2, .15, 4.6, '#b9b1a4').box(0, 1.95, 0, 1.5, .9, 1.5, '#d8d0bc', [3, 3, 1]).box(0, 2.85, 0, 1.2, .6, 1.2, '#8fa39a').box(0, 3.45, 0, .8, .5, .8, '#8fa39a').box(0, 3.95, 0, .4, .5, .4, '#8fa39a').box(0, 4.45, 0, .05, 1, .05, '#ddd').box(.22, 5.2, 0, .4, .25, .02, '#b03030'), true);
     add('Water Tower', 1869, 1900, AX(100), AZ(-800), 5.6, g => { g.box(0, 0, 0, 2, 1, 2, '#e2d8b8', [3, 3, 1]).box(0, 1, 0, 1.3, .5, 1.3, '#e2d8b8').box(0, 1.5, 0, .7, 3, .7, '#e2d8b8', [1, 1, 5]).box(0, 4.5, 0, .95, .25, .95, '#d2c8a8').box(0, 4.75, 0, .5, .5, .5, '#8fa39a').box(0, 5.25, 0, .16, .5, .16, '#8fa39a'); for (const [a, b] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) g.box(a * .9, 0, b * .9, .3, 1.5, .3, '#e2d8b8').box(a * .9, 1.5, b * .9, .2, .3, .2, '#8fa39a'); return g; }, false);
@@ -541,9 +541,11 @@ export class World {
     const ps = this.renderer.getPixelRatio() * h / (2 * Math.tan(this.camera.fov * Math.PI / 360)) * .2;
     for (const m of [this.smokeMat, this.fireMat, this.fsmokeMat]) m.uniforms.uScale.value = ps;
   }
-  pan(dx, dz) { const c = this.cam, cs = Math.cos(c.yaw), sn = Math.sin(c.yaw); c.tx = clamp(c.tx + dx * cs + dz * sn, -HX - 14, AX(120)); c.tz = clamp(c.tz - dx * sn + dz * cs, AZ(-800), HZ + 30); }
+  pan(dx, dz) { const c = this.cam, cs = Math.cos(c.yaw), sn = Math.sin(c.yaw); c.tx = clamp(c.tx + dx * cs + dz * sn, -HX - 14, AX(120)); c.tz = clamp(c.tz - dx * sn + dz * cs, AZ(-800), HZ + 66); }
   zoom(f) { this.cam.td = clamp(this.cam.td * f, 6, 120); }
   rotate(a, p = 0) { this.cam.yaw += a; this.cam.pitch = clamp(this.cam.pitch + p, .3, 1.45); }
+  // point the camera at a skyline landmark by its label; returns false if it is not standing
+  flyToLandmark(label) { const k = this.lms.find(m => m.L && m.name === label); if (!k || !k.m.visible) return false; const c = this.cam; c.tx = k.x - 6; c.tz = k.z + 4; c.td = 34 + k.top * 2.2; c.pitch = .5; return true; }
   flyTo(i, d) { this.cam.tx = wx(this.sim.tx[i]); this.cam.tz = wz(this.sim.ty[i]); if (d) this.cam.td = d; }
   enterStreet(x, z) { const tx = clamp(Math.round((x + HX - .5) / 5) * 5, 0, TW - 1); this.street = { x: wx(tx), z: clamp(z, -HZ + 1, HZ - 1), yaw: Math.PI, pitch: .05 }; this.camera.fov = 68; this.camera.near = .03; this.resize(); }
   exitStreet() { this.street = null; this.camera.fov = 38; this.camera.near = .5; this.resize(); }
