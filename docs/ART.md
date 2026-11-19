@@ -35,7 +35,8 @@ Rules that keep twelve portraits looking like one set:
 
 - **Palette:** cream ground (`#f1e7cf`, already the game's paper color), deep teal and navy for clothing and shadow, one warm accent per character (hair, shawl, hat band, waistcoat). No other hues.
 - **Shading:** two or three flat tones per surface, hard edges, light always from the upper left.
-- **Crop:** head and shoulders, turned three-quarters, eyes on the upper third. Same head size in every portrait.
+- **Crop:** waist-up, standing, turned three-quarters, with something in the hands. Same head size in every portrait.
+- **Interface:** rendered and warm (deep teal panels, brass trim, parchment reading surfaces, raised buttons), built in CSS. The flat portraits sit inside it.
 - **Period comes from costume:** hats, collars, shawls, hair. This is what tells a student it is 1855 and not today, so each character gets one unmistakable silhouette piece.
 - **Edges:** transparent background; the spatter fade at the bottom is fine, nothing behind the head.
 - **Legibility:** must still read at 72 pixels wide. Check every portrait at that size before calling it done.

@@ -44,8 +44,8 @@ def files(kind):
 
 def main():
     man = {'portraits': [], 'icons': [], 'rounds': [], 'ui': []}
-    for p in files('portraits'):     # 5:6 bust, keeps the top of a taller image so the head is never cut
-        im = crop_to(Image.open(p).convert('RGB'), 5 / 6, top_bias=0.12).resize((400, 480), Image.LANCZOS)
+    for p in files('portraits'):     # 3:4 waist-up figure; a taller image keeps its top so the head is never cut
+        im = crop_to(Image.open(p).convert('RGB'), 3 / 4, top_bias=0.05).resize((540, 720), Image.LANCZOS)
         im.save(OUT / 'portraits' / f'{p.stem.lower()}.jpg', quality=88); man['portraits'].append(p.stem.lower())
     for p in files('icons'):         # square, background removed
         im = trim(cut_background(Image.open(p))).resize((160, 160), Image.LANCZOS)

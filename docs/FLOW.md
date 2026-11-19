@@ -35,7 +35,11 @@ Checks for every image before you keep it:
 
 Aspect ratio **3:4**. Save into `art/raw/portraits/`.
 
-Template: *"Head-and-shoulders portrait of [who], turned three-quarters toward the viewer, [expression]. [clothing]. Chicago, [year]. The face fills the upper two-thirds of the frame. The figure fades into dry-brush spatter at the bottom edge."* then the style block.
+Advisers are shown **waist-up**, standing in an arched frame beside what they say, so hands and a prop matter as much as the face.
+
+Template: *"Waist-up portrait of [who], standing, turned three-quarters toward the viewer, [expression], [what the hands are doing]. [clothing]. Chicago, [year]. The top of the head is near the top of the frame. The figure fades into dry-brush spatter at the bottom edge."* then the style block.
+
+Give every character something to do with their hands: Pike with thumbs in his waistcoat, Dr. Voss holding a medical bag, Crane counting rent money, Doyle resting a hand on an axe, Miss Whitlow holding a slate, Lund with a pipe, Beck pulling his tape measure, Father Dunne with a prayer book, Addams with a ledger, Powers offering a cigar, Bridget holding a laundry basket, Rosa with a market basket.
 
 | File name | Who and what to ask for |
 | --- | --- |
