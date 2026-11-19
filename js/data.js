@@ -174,7 +174,7 @@ export const FAMILIES = [
 
 // ---------- the cast ----------
 // Everyone who speaks in the game. real: true marks a historical person; the rest are invented.
-// look, beard, collar, and color only shape the placeholder portrait. Set img: true once assets/portraits/<id>.png exists.
+// look, beard, collar, and color only shape the placeholder portrait that shows until real art is added (see docs/FLOW.md).
 export const CHARACTERS = {
   pike: { name: 'Harlan Pike', role: 'Mill owner', look: 'top', color: '#c9b38a' },
   voss: { name: 'Dr. Ada Voss', role: 'Physician', look: 'bun', color: '#a9bcc8' },

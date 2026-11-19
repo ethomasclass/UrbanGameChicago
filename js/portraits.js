@@ -1,6 +1,6 @@
 // Character portraits. Until real art exists, each character gets a placeholder cameo drawn in code.
-// To use real art: save a square image as assets/portraits/<id>.png and set img: true on that character in data.js.
-import { CHARACTERS } from './data.js';
+// To use real art: put the raw image in art/raw/portraits/<id>.png and run tools/art.py. See docs/FLOW.md.
+import { CHARACTERS, T, B, SPECIAL } from './data.js';
 
 const cache = {};
 const HATS = {
@@ -19,4 +19,15 @@ function cameo(c) {
 <ellipse cx="40" cy="48" rx="37" ry="45" fill="none" stroke="#c9973a" stroke-width="3.5"/><ellipse cx="40" cy="48" rx="33.5" ry="41.5" fill="none" stroke="rgba(42,38,34,.35)" stroke-width="1"/></svg>`;
   return 'data:image/svg+xml,' + encodeURIComponent(svg);
 }
-export function portrait(id) { const c = CHARACTERS[id]; if (!c) return ''; return cache[id] || (cache[id] = c.img ? `assets/portraits/${id}.png` : cameo(c)); }
+// assets/manifest.json lists the real art that exists (tools/art.py writes it). Everything else falls back to a placeholder.
+export const ART = { portraits: [], icons: [], rounds: [], ui: [] };
+export async function loadArt() { try { const r = await fetch('assets/manifest.json', { cache: 'no-cache' }); if (r.ok) Object.assign(ART, await r.json()); } catch (e) { /* no art yet */ } }
+// Characters can have later-life portraits named <id>-2 (from 1871) and <id>-3 (from 1889).
+export function portrait(id, round = 0) {
+  const c = CHARACTERS[id]; if (!c) return '';
+  for (const v of round >= 8 ? ['-3', '-2', ''] : round >= 4 ? ['-2', ''] : ['']) if (ART.portraits.includes(id + v)) return `assets/portraits/${id}${v}.jpg`;
+  return cache[id] || (cache[id] = cameo(c));
+}
+// name of the icon file for something on the build list, e.g. T.COTTAGE -> "cottage"
+const NAMES = Object.fromEntries(Object.entries(T).map(([k, v]) => [v, k.toLowerCase()]));
+export function icon(k) { const n = NAMES[k] || k, d = SPECIAL[k] || B[k]; return ART.icons.includes(n) ? `<img class="ico" src="assets/icons/${n}.png" alt="">` : d.icon; }

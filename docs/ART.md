@@ -21,7 +21,7 @@ Twelve characters speak in the game. Each needs one portrait.
 | `bridget` | Bridget Malone | no | Also the face of the Malone family stories. Ages from about 25 (1848) to 77 (1900) |
 | `rosa` | Rosa Rossi | no | Also the face of the Rossi family stories |
 
-**How to add one:** save it as `assets/portraits/<id>.png`, then add `img: true` to that character in `js/data.js`. Nothing else changes.
+**How to add one:** see `docs/FLOW.md`, which has the prompt and file name for every asset and the one command that installs them.
 
 **Spec:** portrait orientation, 5:6 (for example 400 by 480 pixels), transparent or plain background. They display at about 46 by 55 pixels in the advice card and could go larger on the history cards, so faces need to read at thumbnail size: strong silhouette, simple shapes, one identifying prop or hat each.
 

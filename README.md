@@ -22,7 +22,9 @@ Each of the eleven rounds works the same way:
 | `js/main.js` | Round flow and interface. |
 | `js/report.js` | The printable final report. |
 | `js/portraits.js` | Character portraits (placeholder cameos until real art is added). |
-| `docs/ART.md` | Plan for custom art: portraits, icons, interface, textures. |
+| `docs/FLOW.md` | Shot list and prompts for generating the game's art, and how to install it. |
+| `tools/art.py` | Turns raw art in `art/raw/` into game-ready files in `assets/`. |
+| `docs/ART.md` | Background on the art direction. |
 | `tools/bot.mjs` | Headless playthroughs for tuning: `node tools/bot.mjs` |
 
 ## Address options

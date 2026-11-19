@@ -5,7 +5,8 @@ import { World } from './world.js';
 import { Sound } from './audio.js';
 import { buildReport } from './report.js';
 import { T, B, GROUPS, ROUNDS, QUOTES, JOBS, FAMILIES, CHARACTERS, ADVICE, howTo, itemOf } from './data.js';
-import { portrait } from './portraits.js';
+import { portrait, icon, loadArt, ART } from './portraits.js';
+await loadArt();
 
 const $ = s => document.querySelector(s);
 const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
@@ -49,11 +50,11 @@ function drawList() {
   const it = sim.todo.find(t => t.left > 0), idx = sim.todo.indexOf(it), k = it ? it.k : null, changed = k !== G.shown; G.active = k; if (!it) return;
   $('#lstep').textContent = `Step ${idx + 1} of ${sim.todo.length}`;
   const d = itemOf(k), pips = it.n > 1 ? `<div class="pips">${Array.from({ length: it.n }, (_, q) => `<i class="${q < it.n - it.left ? 'd' : ''}"></i>`).join('')}</div>` : '';
-  if (changed) { $('#lnow').outerHTML = `<div id="lnow"><em>${d.icon}</em><div><h3>${d.name}</h3><small></small>${pips}</div></div>`; }
+  if (changed) { $('#lnow').outerHTML = `<div id="lnow"><em>${icon(k)}</em><div><h3>${d.name}</h3><small></small>${pips}</div></div>`; }
   $('#lnow small').textContent = it.n > 1 ? `${it.left} of ${it.n} left to place` : 'Just one. Choose well.'; if (!changed && pips) $('#lnow .pips').outerHTML = pips;
   if (changed) {
     const who = (ADVICE[k] || []).filter(v => v.from <= sim.round).slice(0, 2);
-    $('#advice').innerHTML = who.map(v => `<div class="voice"><img src="${portrait(v.who)}" alt=""><div><b>${CHARACTERS[v.who].name} <span>${CHARACTERS[v.who].role}</span></b><q>${v.say}</q></div></div>`).join('');
+    $('#advice').innerHTML = who.map(v => `<div class="voice"><img src="${portrait(v.who, sim.round)}" alt=""><div><b>${CHARACTERS[v.who].name} <span>${CHARACTERS[v.who].role}</span></b><q>${v.say}</q></div></div>`).join('');
     $('#tip').textContent = howTo(k); const more = sim.todo.length - idx - 1; $('#lnext').textContent = more ? `${more} more thing${more > 1 ? 's' : ''} after this.` : 'This is the last thing this round.';
     if (G.shown != null) snd.zone();
   }
@@ -178,8 +179,9 @@ function showBrief(r) {
   G.phase = 'brief'; sim.startRound(r); const R = ROUNDS[r]; $('#list').hidden = true; $('#hover').hidden = true;
   remark();
   if (sim.b.includes(T.DEPOT)) { world.runTrain(); snd.whistle(); } snd.paper(); updateHud();
-  const need = R.build.map(x => `<li><b>${x.n}</b>${itemOf(x.k).icon} ${itemOf(x.k).name}${x.n > 1 && !/s$/.test(itemOf(x.k).name) ? 's' : ''}</li>`).join('');
-  const c = card(`<div class="yrs">Round ${r + 1} of ${ROUNDS.length}</div><h2>${R.year}: ${R.name}</h2><p>${R.story}</p><p class="scene"><b>On the street:</b> ${R.scene}</p><h4>You must build</h4><ul class="need">${need}</ul><button class="big">Start building</button>`);
+  const need = R.build.map(x => `<li><b>${x.n}</b>${icon(x.k)} ${itemOf(x.k).name}${x.n > 1 && !/s$/.test(itemOf(x.k).name) ? 's' : ''}</li>`).join('');
+  const art = ART.rounds.includes(String(R.year)) ? `<img class="banner" src="assets/rounds/${R.year}.jpg" alt="">` : '';
+  const c = card(`${art}<div class="yrs">Round ${r + 1} of ${ROUNDS.length}</div><h2>${R.year}: ${R.name}</h2><p>${R.story}</p><p class="scene"><b>On the street:</b> ${R.scene}</p><h4>You must build</h4><ul class="need">${need}</ul><button class="big">Start building</button>`);
   c.querySelector('.big').onclick = startBuild;
 }
 function startBuild() {
@@ -198,7 +200,7 @@ function startFire() {
 function showResult() {
   G.phase = 'result'; const r = sim.round, R = ROUNDS[r], out = sim.endRound(), now = snapshot(), last = r === ROUNDS.length - 1;
   world.yearly(); world.setEra(R.year, !!R.fire); remark(); save(); updateHud(); snd.paper();
-  const fam = (out.family || []).map(f => `<div class="fam"><img src="${portrait(FAMILIES.find(F => F.id === f.id).face)}" alt=""><div><h4>${f.name}</h4><p>${f.text}</p></div></div>`).join('');
+  const fam = (out.family || []).map(f => `<div class="fam"><img src="${portrait(FAMILIES.find(F => F.id === f.id).face, r)}" alt=""><div><h4>${f.name}</h4><p>${f.text}</p></div></div>`).join('');
   world.setCity(built()); const grew = world.dtN - (G.dtBefore || 0); if (grew > 0) out.splice(1, 0, { t: `Across the river, downtown Chicago put up ${grew} new buildings, raised on your ward's lumber, labor, and rents.` });
   const d = (k, label, suf = '') => { const a = G.before[k], b = now[k], df = Math.round(b - a); return `<div>${label}<b>${fmt(b)}${suf}${df ? `<u class="${df > 0 ? 'up' : 'dn'}">${df > 0 ? '▲' : '▼'}${Math.abs(df)}</u>` : ''}</b></div>`; };
   const c = card(`<div class="yrs">${R.year} &nbsp; What happened</div><h2>${R.name}</h2><ul class="what">${out.map(o => `<li class="${o.bad ? 'bad' : ''}">${o.t}</li>`).join('')}</ul><div class="deltas">${d('pop', 'People')}${d('health', 'Health')}${d('happy', 'Happiness')}${d('work', 'Have work', '%')}</div>${fam}<p class="askq"><b>Talk about it:</b> ${R.ask}</p><button class="big">${last ? 'See your final report' : `Go on to ${ROUNDS[r + 1].year}`}</button>`, true);
@@ -250,6 +252,7 @@ function finish() {
 
 const saved = loadSave(); if (saved) { $('#resume').hidden = false; $('#resume').textContent = `Continue saved game (${ROUNDS[saved.sim.round + 1].year}${saved.name ? ', ' + saved.name : ''})`; $('#resume').onclick = () => begin(saved); }
 $('#go').onclick = () => begin(null);
+if (ART.ui.includes('title')) $('.startcard').insertAdjacentHTML('afterbegin', '<img class="banner" src="assets/ui/title.jpg" alt="">');
 requestAnimationFrame(frame);
 (function idle() { if (G.phase === 'start') { world.cam.yaw += .0012; requestAnimationFrame(idle); } })();
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => { });

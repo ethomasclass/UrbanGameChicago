@@ -146,3 +146,9 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
 #coach button.go { background: var(--gold); color: var(--ink); font-weight: 700; padding: 6px 16px; border-radius: 4px; } #coach button.skip { color: #b9ad94; font-size: 12.5px; text-decoration: underline; }
 #coach.c-mid { left: 50%; bottom: 90px; transform: translateX(-50%); } #coach.c-list { left: 316px; top: 110px; } #coach.c-top { right: 16px; top: 78px; }
 #coach.c-list::before, #coach.c-top::before { content: ""; position: absolute; border: 9px solid transparent; } #coach.c-list::before { left: -20px; top: 22px; border-right-color: var(--gold); } #coach.c-top::before { top: -20px; right: 150px; border-bottom-color: var(--gold); }
+
+/* ---------- custom art slots ---------- */
+.voice img, .fam img { width: 62px; height: 74px; object-fit: cover; object-position: 50% 15%; border-radius: 50%; border: 3px solid var(--gold); background: var(--paper); }
+.fam img { width: 54px; height: 65px; }
+img.ico { width: 1.25em; height: 1.25em; vertical-align: -.25em; object-fit: contain; } #lnow em img.ico { width: 46px; height: 46px; vertical-align: middle; }
+img.banner { display: block; width: calc(100% + 56px); margin: -20px -28px 14px; border-bottom: 3px solid var(--ink); } .startcard img.banner { width: calc(100% + 68px); margin: -26px -34px 16px; border-radius: 4px 4px 0 0; }
