@@ -151,10 +151,10 @@ void main(){ float t=fract(uTime*aS.y+aS.x); vec3 p=position+vec3(uWind.x*t*t*aS
 vec4 mv=modelViewMatrix*vec4(p,1.); gl_Position=projectionMatrix*mv; gl_PointSize=min(160., aS.z*(.3+1.5*t)*uScale/-mv.z); vA=smoothstep(0.,.1,t)*(1.-t); }`;
 const PART_FS = `uniform vec3 uColor; uniform float uOpacity; varying float vA;
 void main(){ float d=length(gl_PointCoord-.5); float a=smoothstep(.5,.12,d)*vA*uOpacity; if(a<.01) discard; gl_FragColor=vec4(uColor,a); }`;
-const AGENT_VS = `attribute vec3 aA; attribute vec3 aB; attribute vec4 aP; attribute vec3 aCol; uniform float uTime; uniform vec3 uTint; varying vec3 vC;
+const AGENT_VS = `attribute vec3 aA; attribute vec3 aB; attribute vec4 aP; attribute vec3 aCol; attribute vec3 color; uniform float uTime; uniform vec3 uTint; varying vec3 vC;
 void main(){ float f=fract(uTime*aP.x+aP.y)*2.; float sgn=f>1.?-1.:1.; f=f>1.?2.-f:f; vec3 d=aB-aA; vec3 dir=normalize(d+vec3(0.,0.,.0001))*sgn; vec3 rt=vec3(dir.z,0.,-dir.x);
 vec3 lp=position*aP.z; vec3 wp=mix(aA,aB,f)+rt*lp.x+vec3(0.,lp.y,0.)+dir*lp.z+rt*.12*sgn; wp.y+=abs(sin(uTime*9.+aP.y*50.))*.012*aP.w;
-vec3 n=normalize(rt*normal.x+vec3(0.,normal.y,0.)+dir*normal.z); float l=.6+.4*max(dot(n,normalize(vec3(.4,.8,.3))),0.); vC=aCol*l*uTint;
+vec3 n=normalize(rt*normal.x+vec3(0.,normal.y,0.)+dir*normal.z); float l=.6+.4*max(dot(n,normalize(vec3(.4,.8,.3))),0.); vC=(color.r+color.g+color.b>2.94?aCol:color)*l*uTint;
 gl_Position=projectionMatrix*viewMatrix*vec4(wp,1.); }`;
 const AGENT_FS = `varying vec3 vC; void main(){ gl_FragColor=vec4(pow(vC,vec3(.4545)),1.); }`;
 
@@ -162,15 +162,18 @@ const AGENT_FS = `varying vec3 vC; void main(){ gl_FragColor=vec4(pow(vC,vec3(.4
 const AX = e => -HX + .5 + (e + 800) / 15, AZ = s => -HZ + .5 + (s - 400) / 35;
 
 class Pool {
-  constructor(geo, mat, cap, scene) { this.mesh = new THREE.InstancedMesh(geo, mat, cap); this.mesh.count = 0; this.mesh.frustumCulled = false; this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage); this.lots = new Int32Array(cap); this.cap = cap; this.mesh.setColorAt(0, _c.set(1, 1, 1)); scene.add(this.mesh); }
+  constructor(geo, mat, cap, scene) { this.mesh = new THREE.InstancedMesh(geo, mat, cap); this.mesh.castShadow = this.mesh.receiveShadow = true; this.mesh.count = 0; this.mesh.frustumCulled = false; this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage); this.lots = new Int32Array(cap); this.cap = cap; this.mesh.setColorAt(0, _c.set(1, 1, 1)); scene.add(this.mesh); }
 }
 
 export class World {
   constructor(canvas, sim, opts = {}) {
     this.sim = sim; this.canvas = canvas;
-    const mem = navigator.deviceMemory || 4, cores = navigator.hardwareConcurrency || 4;
-    this.tier = opts.low ? 2 : (mem <= 4 || cores <= 4) ? 1 : 0;
-    this.Q = [{ dpr: 1.5, smoke: 2600, agents: 1500 }, { dpr: 1, smoke: 1500, agents: 900 }, { dpr: .75, smoke: 700, agents: 450 }];
+    // Graphics: High (shadows, props, detailed people), Medium (Chromebook default), Low (old or busy machines)
+    this.Q = [
+      { name: 'High', dpr: 2, smoke: 3200, agents: 2600, shadows: true, props: true, rich: true, dtPeople: 1600 },
+      { name: 'Medium', dpr: 1.25, smoke: 1600, agents: 1000, shadows: false, props: true, rich: false, dtPeople: 600 },
+      { name: 'Low', dpr: .75, smoke: 700, agents: 450, shadows: false, props: false, rich: false, dtPeople: 160 }];
+    this.level = opts.low ? 'low' : opts.gfx || 'auto'; this.tier = this.tierFor(this.level);
     const r = this.renderer = new THREE.WebGLRenderer({ canvas, antialias: this.tier < 2, powerPreference: 'high-performance', stencil: false });
     r.setPixelRatio(Math.min(window.devicePixelRatio || 1, this.Q[this.tier].dpr));
     this.scene = new THREE.Scene();
@@ -180,13 +183,35 @@ export class World {
     this.street = null; this.shake = 0; this.night = 0; this.nightT = 0; this.haze = 0; this.time = 0;
     this.overlay = 'none'; this.zoneView = false;
     this.hemi = new THREE.HemisphereLight('#eef4f8', '#8a7d68', 1.5); this.scene.add(this.hemi);
-    this.sun = new THREE.DirectionalLight('#fff1d6', 2.2); this.sun.position.set(-40, 70, 45); this.scene.add(this.sun);
+    this.sun = new THREE.DirectionalLight('#fff1d6', 2.2); this.sun.position.set(-40, 70, 45); this.scene.add(this.sun); this.scene.add(this.sun.target);
+    r.shadowMap.type = THREE.PCFShadowMap; const sh = this.sun.shadow; sh.mapSize.set(2048, 2048); sh.bias = -.0004; sh.normalBias = .03; sh.camera.near = 1; sh.camera.far = 220;
     this.slotT = new Uint16Array(NL); this.slotI = new Int32Array(NL).fill(-1);
     this.anims = []; this.raycaster = new THREE.Raycaster(); this.plane = new THREE.Plane(_up, -.15);
     this.buildMaterials(); this.buildGround(); this.buildSurround(); this.buildPools(); this.buildParticles(); this.buildAgents(); this.buildExtras(); this.buildLabels();
+    this.buildProps();
     this.fps = { n: 0, t: 0, v: 60 };
-    this.resize(); this.syncAll();
+    this.resize(); this.syncAll(); this.applyTier();
   }
+
+  tierFor(level) {
+    if (level === 'high') return 0; if (level === 'medium') return 1; if (level === 'low') return 2;
+    const mem = navigator.deviceMemory || 4, cores = navigator.hardwareConcurrency || 4;
+    return mem >= 8 && cores >= 8 ? 0 : 1;
+  }
+  // level: 'auto' | 'low' | 'medium' | 'high'. Applied live; only antialiasing needs a reload to change.
+  setGfx(level) { this.level = level; this.tier = this.tierFor(level); this.applyTier(); }
+  applyTier() {
+    const q = this.Q[this.tier], r = this.renderer;
+    r.setPixelRatio(Math.min(window.devicePixelRatio || 1, q.dpr)); this.resize();
+    if (r.shadowMap.enabled !== q.shadows) {
+      r.shadowMap.enabled = q.shadows; this.sun.castShadow = q.shadows;
+      this.scene.traverse(o => { if (o.material) for (const m of [].concat(o.material)) m.needsUpdate = true; });
+    }
+    this.drawGround(); this.applyProps(); this.rebuildSmoke(); this.rebuildAgents(); this.rebuildDTTraffic();
+    if (this.onTier) this.onTier(this.tier);
+  }
+  // mark a mesh as casting and receiving shadows (only matters on High)
+  shade(m, cast = true) { m.castShadow = cast; m.receiveShadow = true; return m; }
 
   buildMaterials() {
     const tex = (size, draw) => { const c = document.createElement('canvas'); c.width = c.height = size; draw(c.getContext('2d')); const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t; };
@@ -227,7 +252,7 @@ export class World {
     };
     this.pat = {}; for (const k in T_) this.pat[k] = gx.createPattern(T_[k], 'repeat');
     const t = this.gTex = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; t.generateMipmaps = true; t.minFilter = THREE.LinearMipmapLinearFilter;
-    const g = new THREE.Mesh(new THREE.PlaneGeometry(TW, TH), new THREE.MeshLambertMaterial({ map: t })); g.rotation.x = -Math.PI / 2; this.scene.add(g);
+    const g = new THREE.Mesh(new THREE.PlaneGeometry(TW, TH), new THREE.MeshLambertMaterial({ map: t })); g.receiveShadow = true; g.rotation.x = -Math.PI / 2; this.scene.add(g);
     const ft = new THREE.CanvasTexture(T_.grass); ft.wrapS = ft.wrapT = THREE.RepeatWrapping; ft.repeat.set(450, 450); ft.colorSpace = THREE.SRGBColorSpace; ft.anisotropy = 4;
     const far = new THREE.Mesh(new THREE.PlaneGeometry(900, 900), new THREE.MeshLambertMaterial({ map: ft })); far.rotation.x = -Math.PI / 2; far.position.y = -.05; this.scene.add(far);
     // the river: moving ripples and glints, and it turns brown as the city fouls it
@@ -258,6 +283,15 @@ export class World {
     // streets change with the times: prairie mud, then plank roads, then granite block
     x.fillStyle = y < 1855 ? P.mud : y < 1877 ? P.plank : P.block; x.fillRect(0, 0, TW * PX, TH * PX);
     if (y >= 1848) { x.strokeStyle = y < 1877 ? '#c4ad80' : '#b9b5aa'; x.lineWidth = 5; for (let k = 0; k < NB; k++) x.strokeRect(((k % BW) * 5 + 1) * PX - 3.5, (((k / BW) | 0) * 5 + 1) * PX - 3.5, 4 * PX + 7, 4 * PX + 7); } // sidewalks
+    // wheel ruts while the streets are dirt or planks, curbs and gutters once they are paved, puddles and horse droppings always
+    if (y < 1877) { x.strokeStyle = 'rgba(45,32,18,.18)'; x.lineWidth = 2; for (let c = 0; c < TW; c += 5) for (const o of [.32, .68]) { x.beginPath(); x.moveTo(c * PX + o * PX, 0); x.lineTo(c * PX + o * PX, TH * PX); x.stroke(); } for (let r = 0; r < TH; r += 5) for (const o of [.32, .68]) { x.beginPath(); x.moveTo(0, r * PX + o * PX); x.lineTo(TW * PX, r * PX + o * PX); x.stroke(); } }
+    else { x.strokeStyle = 'rgba(30,26,22,.35)'; x.lineWidth = 1.5; for (let k = 0; k < NB; k++) x.strokeRect(((k % BW) * 5 + 1) * PX - 7, (((k / BW) | 0) * 5 + 1) * PX - 7, 4 * PX + 14, 4 * PX + 14); }
+    for (let k = 0, nP = y < 1855 ? 90 : y < 1877 ? 50 : 24; k < nP; k++) {
+      const ns = hash(k * 3 + 1) < .55, line = ((hash(k * 3 + 2) * (ns ? 6 : 5)) | 0) * 5, along = hash(k * 3 + 3) * (ns ? TH : TW) * PX, across = line * PX + PX * (.2 + hash(k + 9) * .6);
+      const cx = ns ? across : along, cy = ns ? along : across;
+      if (hash(k + 11) < .45) { x.fillStyle = 'rgba(70,88,96,.4)'; x.beginPath(); x.ellipse(cx, cy, 3 + hash(k + 12) * 6, 2 + hash(k + 13) * 3, hash(k) * 3, 0, 7); x.fill(); }
+      else { x.fillStyle = 'rgba(55,40,22,.55)'; for (let q = 0; q < 3; q++) x.fillRect(cx + q * 2.2, cy + (q % 2) * 1.6, 2, 2); }
+    }
     for (let k = 0; k < NB; k++) if (s.sewer[k]) {
       const X = (k % BW) * 5 * PX, Y = ((k / BW) | 0) * 5 * PX;
       x.strokeStyle = 'rgba(30,60,80,.7)'; x.lineWidth = 3; x.setLineDash([9, 7]); x.strokeRect(X + PX / 2, Y + PX / 2, 5 * PX, 5 * PX); x.setLineDash([]);
@@ -270,8 +304,8 @@ export class World {
       if (b && b !== T.PARK && b !== T.RUBBLE && b !== T.MARKET) { x.strokeStyle = 'rgba(70,50,30,.45)'; x.lineWidth = 1.5; x.strokeRect(X + 1.5, Y + 1.5, PX - 3, PX - 3); } // fences
       else { x.strokeStyle = 'rgba(0,0,0,.07)'; x.lineWidth = 1; x.strokeRect(X + .5, Y + .5, PX - 1, PX - 1); }
     }
-    x.fillStyle = 'rgba(25,18,10,.3)'; // shadows fall to the northeast
-    for (let i = 0; i < NL; i++) {
+    x.fillStyle = 'rgba(25,18,10,.3)'; // shadows fall to the northeast (painted, unless High draws real ones)
+    if (!this.sun.castShadow) for (let i = 0; i < NL; i++) {
       const h = HGT[s.b[i]]; if (!h) continue;
       const X = s.tx[i] * PX, Y = s.ty[i] * PX, m = PX * .16, x0 = X + m, x1 = X + PX - m, y0 = Y + m, y1 = Y + PX - m, dx = h * .6 * PX, dy = h * .68 * PX;
       x.beginPath(); x.moveTo(x0, y1); x.lineTo(x1, y1); x.lineTo(x1 + dx, y1 - dy); x.lineTo(x1 + dx, y0 - dy); x.lineTo(x0 + dx, y0 - dy); x.lineTo(x0, y0); x.closePath(); x.fill();
@@ -295,19 +329,126 @@ export class World {
       spots.push({ x: x + hash(spots.length) * 1.2, z: z + hash(spots.length + 7) * 1.2, d, h: hash(spots.length + 3) });
     }
     spots.sort((a, b) => a.d - b.d); this.spots = spots;
-    const m = this.surround = new THREE.InstancedMesh(gb.build(), this.bMats, spots.length); m.frustumCulled = false; m.count = 0; this.scene.add(m);
+    const m = this.surround = new THREE.InstancedMesh(gb.build(), this.bMats, spots.length); m.frustumCulled = false; this.shade(m); m.count = 0; this.scene.add(m);
     spots.forEach((p, k) => { m.setColorAt(k, _c.copy(TINTS.frame[k % 5]).lerp(C('#e2d9c4'), .45).multiplyScalar(1 + p.h * .15)); });
-    const dt = []; for (let z = AZ(-900); z < HZ + 30; z += 3.4) for (let x = HX + 10; x < AX(110) - 1.5; x += 3.4) { if (Math.abs(z - AZ(-330)) < 3.2) continue; const loop = z > AZ(-330) && z < AZ(560) ? 1 : .3; dt.push({ x, z, h: hash(dt.length + 99), d: (x - HX) * .5 + Math.abs(z - AZ(-50)) * .7, loop }); }
     const LM = this.buildLandmarks();
-    for (let k = dt.length - 1; k >= 0; k--) if (LM.some(m => Math.abs(m.x - dt[k].x) < 3.4 && Math.abs(m.z - dt[k].z) < 3.4)) dt.splice(k, 1);
-    dt.sort((p, q) => (p.d + p.h * 9) - (q.d + q.h * 9)); this.dtN = Math.round(dt.length * .04); this.dtAnims = [];
-    this.dtSpots = dt; const d = this.downtown = new THREE.InstancedMesh(gb.build(), this.bMats, dt.length); d.frustumCulled = false; this.scene.add(d);
+    this.buildDowntown(LM);
     this.setEra(1837, false);
   }
+
+  // ---------- downtown: real blocks across the river, eight lots around each block, growing as the ward grows ----------
+  buildDowntown(LM) {
+    const P = 7, SW = 1.15, LW = (P - SW) / 3, x0 = HX + 9.6, x1 = AX(110) - .4, z0 = AZ(-900), z1 = HZ + 30, rz = AZ(-330);
+    const nx = Math.floor((x1 - x0) / P), nz = Math.floor((z1 - z0) / P);
+    this.dg = { P, SW, LW, x0, z0, nx, nz, rz, X1: x0 + nx * P, Z1: z0 + nz * P };
+    const dt = [];
+    for (let bz = 0; bz < nz; bz++) for (let bx = 0; bx < nx; bx++) for (let a = 0; a < 3; a++) for (let b = 0; b < 3; b++) {
+      if (a === 1 && b === 1) continue; // the middle of the block is the yard and the alley
+      const x = x0 + bx * P + SW / 2 + LW * (a + .5), z = z0 + bz * P + SW / 2 + LW * (b + .5);
+      if (Math.abs(z - rz) < 2.7) continue;
+      if (LM.some(m => m.x > HX && Math.abs(m.x - x) < 3.1 && Math.abs(m.z - z) < 3.1)) continue;
+      const k = dt.length, deep = hash(k + 5) < .3 ? hash(k + 6) * .4 : 0;
+      dt.push({ x, z, bx, bz, w: LW - .05, dd: LW - .05 - deep, oz: (b === 0 ? 1 : b === 2 ? -1 : 0) * deep / 2, h: hash(k + 99), s: hash(k + 41), bs: hash(k + 57), d: (x - HX) * .5 + Math.abs(z - AZ(-50)) * .7, loop: z > rz && z < AZ(560) ? 1 : .3 });
+    }
+    dt.sort((p, q) => (p.d + p.h * 9) - (q.d + q.h * 9)); this.dtN = Math.round(dt.length * .04); this.dtAnims = []; this.dtSpots = dt;
+    // walls: the window texture repeats once per floor however tall the building is drawn
+    const FH = .36; this.FH = FH;
+    const tex = (draw) => { const c = document.createElement('canvas'); c.width = c.height = 64; draw(c.getContext('2d')); const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t; };
+    const chicago = tex(x => { // Chicago windows: a wide fixed pane between two narrow sashes, terracotta piers
+      x.fillStyle = '#fff'; x.fillRect(0, 0, 64, 64); x.fillStyle = 'rgba(0,0,0,.1)'; x.fillRect(0, 50, 64, 14);
+      x.fillStyle = '#2f343d'; x.fillRect(5, 8, 54, 40); x.fillStyle = '#4f5a6a'; x.fillRect(5, 8, 54, 15);
+      x.fillStyle = '#ece6d8'; x.fillRect(17, 8, 3, 40); x.fillRect(44, 8, 3, 40); x.fillRect(5, 46, 54, 3);
+    });
+    const arched = tex(x => { // stone fronts with round-headed windows
+      x.fillStyle = '#fff'; x.fillRect(0, 0, 64, 64); x.fillStyle = 'rgba(60,40,20,.08)'; for (let y = 0; y < 64; y += 10) x.fillRect(0, y, 64, 1);
+      x.fillStyle = '#e4ddcc'; x.beginPath(); x.moveTo(17, 54); x.lineTo(17, 22); x.arc(32, 22, 15, Math.PI, 0); x.lineTo(47, 54); x.fill();
+      x.fillStyle = '#323640'; x.beginPath(); x.moveTo(20, 52); x.lineTo(20, 22); x.arc(32, 22, 12, Math.PI, 0); x.lineTo(44, 52); x.fill();
+      x.fillStyle = '#56606f'; x.fillRect(20, 22, 24, 8); x.fillStyle = '#e4ddcc'; x.fillRect(31, 14, 2, 38); x.fillStyle = '#d3cbb8'; x.fillRect(15, 54, 34, 4);
+    });
+    const dtMat = map => { const m = new THREE.MeshLambertMaterial({ map, vertexColors: true });
+      m.onBeforeCompile = sh => { sh.vertexShader = sh.vertexShader.replace('#include <uv_vertex>', `#include <uv_vertex>\n#ifdef USE_INSTANCING\n vMapUv.y *= length(instanceMatrix[1].xyz) * ${(1 / FH).toFixed(4)};\n#endif`); };
+      m.customProgramCacheKey = () => 'dtfloors'; return m; };
+    const wallM = [dtMat(this.bMats[0].map), this.bMats[1]], archM = [dtMat(arched), this.bMats[1]], chiM = [dtMat(chicago), this.bMats[1]];
+    const pool = (geo, mat) => { const m = new THREE.InstancedMesh(geo, mat, dt.length); m.count = 0; m.frustumCulled = false; m.instanceMatrix.setUsage(THREE.DynamicDrawUsage); m.setColorAt(0, _c.set(1, 1, 1)); this.shade(m); this.scene.add(m); return m; };
+    const body = (wx_, wz_) => new GB().box(0, 0, 0, 1, 1, 1, '#fff', [wx_, wz_, 1]).build();
+    // bodies: 0 wood, 1 brick, 2 stone, 3 Chicago school
+    this.dtBody = [pool(body(3, 3), wallM), pool(body(3, 3), wallM), pool(body(3, 3), archM), pool(body(3, 3), chiM)];
+    const BH = this.BH = .4, cor = (g, c = '#6e6258') => g.box(0, 0, 0, 1.07, .06, 1.07, c).box(0, .06, 0, 1, .07, 1, '#7e7468');
+    const caps = [
+      g => g.roof(0, 0, 0, 1.04, .34, 1.04, '#5f574d', 'z'),                                                     // 0 gable
+      g => g.roof(0, 0, 0, 1.04, .34, 1.04, '#6a5e52', 'x'),                                                     // 1 gable the other way
+      g => g.box(0, 0, 0, 1, .04, 1, '#4f4943').box(0, 0, .48, 1, .26, .05, '#b8aa90').box(0, .26, .48, 1.04, .03, .07, '#6a5e52'), // 2 false front
+      g => cor(g, '#5a4e44'),                                                                                    // 3 bracketed cornice
+      g => cor(g).box(-.34, .13, -.3, .09, .2, .09, '#7a4a3a').box(.3, .13, .28, .09, .2, .09, '#7a4a3a').box(.32, .13, -.32, .07, .16, .07, '#6a4436'), // 4 cornice and chimneys
+      g => { cor(g).box(.2, .13, .1, .26, .18, .22, '#8a8072'); for (const [a, b] of [[-.3, -.26], [-.18, -.26], [-.3, -.14], [-.18, -.14]]) g.box(a, .13, b, .02, .14, .02, '#3a3430'); return g.box(-.24, .27, -.2, .16, .16, .16, '#6a5440').roof(-.24, .43, -.2, .17, .07, .17, '#4a4038', 'x'); }, // 5 water tank
+      g => cor(g).box(0, .13, 0, .92, .24, .92, '#4f5660', [3, 3, 1]).roof(0, .37, 0, .92, .14, .92, '#47505a', 'z'), // 6 mansard with dormers
+      g => cor(g).box(0, .13, 0, .66, .2, .66, '#8a7e70').box(0, .33, 0, .42, .2, .42, '#7e7468').box(0, .53, 0, .2, .24, .2, '#6e6258').box(0, .77, 0, .03, .32, .03, '#3a3430'), // 7 stepped tower
+      g => cor(g, '#8a8478').box(-.3, .13, .3, .2, .3, .2, '#8a8478').roof(-.3, .43, .3, .22, .18, .22, '#4a5560', 'z'), // 8 corner turret
+    ];
+    this.dtCap = caps.map(f => pool(f(new GB()).build(), this.bMats));
+    const aw = (g, col, col2) => { for (const [dx, dz, rx] of [[0, .5, 0], [0, -.5, 0], [.5, 0, 1], [-.5, 0, 1]]) for (let q = 0; q < 6; q++) { const o = -.42 + q * .14 + .07; const c = q % 2 ? col2 : col; if (rx) g.box(dx * 1.12, .3, o, .12, .025, .14, c).box(dx * 1.24, .25, o, .012, .07, .14, c); else g.box(o, .3, dz * 1.12, .14, .025, .12, c).box(o, .25, dz * 1.24, .14, .07, .012, c); } return g; };
+    const store = (g, wall) => { g.box(0, 0, 0, 1, BH, 1, wall); for (const [dx, dz, rx] of [[0, .5, 0], [0, -.5, 0], [.5, 0, 1], [-.5, 0, 1]]) { if (rx) g.box(dx * 1.01, .04, 0, .02, .24, .84, '#2c3038').box(dx * 1.02, .3, 0, .02, .06, .9, '#3a3530'); else g.box(0, .04, dz * 1.01, .84, .24, .02, '#2c3038').box(0, .3, dz * 1.02, .9, .06, .02, '#3a3530'); } return g; };
+    const bases = [
+      g => store(g, '#7a6a5a'),                                     // 0 plain shop front
+      g => aw(store(g, '#6e5e50'), '#9a3a2e', '#e2d8c0'),           // 1 red striped awning
+      g => aw(store(g, '#6e5e50'), '#3d6a58', '#e2d8c0'),           // 2 green striped awning
+      g => aw(store(g, '#7a6a5a'), '#b88a3a', '#b88a3a'),           // 3 tan awning
+      g => { g.box(0, 0, 0, 1, BH, 1, '#b9b1a0'); for (const [dx, dz, rx] of [[0, .5, 0], [0, -.5, 0], [.5, 0, 1], [-.5, 0, 1]]) for (const o of [-.3, 0, .3]) { if (rx) g.box(dx * 1.01, 0, o, .02, .3, .16, '#2a2c30'); else g.box(o, 0, dz * 1.01, .16, .3, .02, '#2a2c30'); } return g; }, // 4 stone arcade
+    ];
+    this.dtBase = bases.map(f => pool(f(new GB()).build(), this.bMats));
+    this.dtAll = [...this.dtBody, ...this.dtCap, ...this.dtBase];
+    // the ground under downtown: streets, sidewalks, rails, yards; the river is cut out so the water shows through
+    const DP = this.DP = 14, gc = this.dtCanvas = document.createElement('canvas'); gc.width = Math.ceil((AX(120) - (HX + 8.6)) * DP); gc.height = Math.ceil((this.dg.Z1 - z0) * DP);
+    const gt = this.dtTex = new THREE.CanvasTexture(gc); gt.colorSpace = THREE.SRGBColorSpace; gt.anisotropy = 8;
+    const gm = new THREE.Mesh(new THREE.PlaneGeometry(gc.width / DP, gc.height / DP), new THREE.MeshLambertMaterial({ map: gt, alphaTest: .5 }));
+    gm.rotation.x = -Math.PI / 2; gm.position.set(HX + 8.6 + gc.width / DP / 2, .004, z0 + gc.height / DP / 2); gm.receiveShadow = true; this.scene.add(gm);
+    // bridges over the main branch, one for every north-south street
+    const bb = new GB(); for (let n = 0; n <= nx; n++) { const x = x0 + n * P; bb.box(x, .05, rz, .9, .1, 4.2, '#6b5a48').box(x - .43, .15, rz, .04, .16, 4.2, '#3a3430').box(x + .43, .15, rz, .04, .16, 4.2, '#3a3430').box(x, 0, rz, .5, .35, .6, '#4a4038'); }
+    this.scene.add(this.shade(new THREE.Mesh(bb.build(), new THREE.MeshLambertMaterial({ vertexColors: true }))));
+  }
+  drawDowntownGround() {
+    const g = this.dtCanvas, x = g.getContext('2d'), D = this.DP, { P, SW, x0, z0, nx, nz, rz } = this.dg, y = this.era ? this.era.year : 1837, burned = this.era && this.era.burned, Pt = this.pat;
+    const ox = HX + 8.6, X = v => (v - ox) * D, Z = v => (v - z0) * D;
+    x.clearRect(0, 0, g.width, g.height);
+    x.fillStyle = y < 1855 ? Pt.mud : y < 1872 ? Pt.plank : Pt.block; x.fillRect(0, 0, g.width, g.height);
+    const built = new Map(); for (let k = 0; k < this.dtN; k++) { const q = this.dtSpots[k], id = q.bz * 100 + q.bx; built.set(id, (built.get(id) || 0) + 1); }
+    for (let bz = 0; bz < nz; bz++) for (let bx = 0; bx < nx; bx++) {
+      const L = x0 + bx * P + SW / 2, T = z0 + bz * P + SW / 2, W = P - SW, on = built.has(bz * 100 + bx);
+      if (y >= 1848 || on) { x.fillStyle = y < 1872 ? '#b9a27a' : '#aaa59a'; x.fillRect(X(L - .28), Z(T - .28), (W + .56) * D, (W + .56) * D); } // sidewalks
+      x.fillStyle = burned ? Pt.ash : Pt.grass; x.fillRect(X(L), Z(T), W * D, W * D);
+      if (on && built.get(bz * 100 + bx) >= 5) { x.fillStyle = burned ? Pt.ash : Pt.dirt; x.fillRect(X(L + W / 3), Z(T + W / 3), W / 3 * D, W / 3 * D); x.fillStyle = 'rgba(40,30,20,.35)'; x.fillRect(X(L + W / 2 - .12), Z(T), .24 * D, W * D); } // back yards and the alley
+    }
+    x.fillStyle = burned ? Pt.ash : '#5d554b'; for (let k = 0; k < this.dtN; k++) { const q = this.dtSpots[k]; x.fillRect(X(q.x - q.w / 2 - .03), Z(q.z + q.oz - q.dd / 2 - .03), (q.w + .06) * D, (q.dd + .06) * D); } // under each building
+    if (y < 1872) { x.strokeStyle = 'rgba(50,35,20,.18)'; x.lineWidth = 2; for (let n = 0; n <= nx; n++) for (const o of [-.18, .18]) { x.beginPath(); x.moveTo(X(x0 + n * P + o), 0); x.lineTo(X(x0 + n * P + o), g.height); x.stroke(); } } // wheel ruts
+    if (y >= 1859) { x.fillStyle = '#26221f'; for (const n of [1, 2]) for (const o of [-.16, .16]) x.fillRect(X(x0 + n * P + o) - 1, 0, 2, g.height); for (const o of [-.16, .16]) x.fillRect(0, Z(AZ(400) + o) - 1, g.width, 2); } // horsecar, later cable car, tracks
+    x.clearRect(0, Z(rz - 1.75), g.width, 3.5 * D); // the main branch of the river
+    this.dtTex.needsUpdate = true;
+  }
+  // people, wagons and streetcars on downtown's streets
+  rebuildDTTraffic() {
+    if (!this.dtSpots || !this.dtPeople) return;
+    const { P, SW, x0, z0, nx, nz, rz } = this.dg, q = this.Q[this.tier], n = this.dtN, y = this.era ? this.era.year : 1837, burned = this.era && this.era.burned;
+    const ppl = [], wag = [], cars = []; let seed = 7; const rnd = () => hash(seed++);
+    const cloth = ['#3a3836', '#2f3a4a', '#5b4a3c', '#4a4f3c', '#6b6558', '#7a3b33', '#b9b0a0', '#2a2a2e'].map(C);
+    const many = burned ? 0 : Math.min(q.dtPeople, n * 7);
+    for (let k = 0; k < many; k++) {
+      const p = this.dtSpots[(rnd() * n) | 0], side = rnd() < .5, ns = rnd() < .5, c = cloth[(rnd() * cloth.length) | 0];
+      const bx0 = x0 + p.bx * P, bz0 = z0 + p.bz * P, line = ns ? bx0 + (side ? P : 0) : bz0 + (side ? P : 0), off = (rnd() < .5 ? -1 : 1) * (SW / 2 - .1);
+      const a0 = (ns ? bz0 : bx0) + rnd() * P * .3, a1 = (ns ? bz0 : bx0) + P * (.7 + rnd() * .3);
+      const A = ns ? [line + off, 0, a0] : [a0, 0, line + off], B = ns ? [line + off, 0, a1] : [a1, 0, line + off];
+      if (k % 9 === 0) { const o2 = off * .35; wag.push(ns ? [line + o2, 0, a0, line + o2, 0, a1 + P] : [a0, 0, line + o2, a1 + P, 0, line + o2]); wag[wag.length - 1].push(.02 + rnd() * .015, rnd(), 1.1, .3, .42 + rnd() * .2, .3 + rnd() * .12, .2); }
+      else ppl.push([...A, ...B, .03 + rnd() * .03, rnd(), .9 + rnd() * .2, 1, c.r, c.g, c.b]);
+    }
+    if (y >= 1859 && !burned && n > 20) { const col = y >= 1882 ? [.72, .58, .2] : [.3, .45, .3], top = this.dg.z0, bot = this.dg.Z1;
+      for (const k of [1, 2]) for (let j = 0; j < 4; j++) cars.push([x0 + k * P, 0, top, x0 + k * P, 0, bot, .006, j / 4 + k * .1, .8, 0, ...col]);
+      for (let j = 0; j < 3; j++) cars.push([x0, 0, AZ(400), this.dg.X1, 0, AZ(400), .02, j / 3, .8, 0, ...col]); }
+    this.fillAgents(q.rich ? this.dtPeopleRich : this.dtPeople, ppl); this.fillAgents(q.rich ? this.dtPeople : this.dtPeopleRich, []); this.fillAgents(this.dtWagons, wag); this.fillAgents(this.dtCars, cars);
+  }
+
   // Real Chicago landmarks that rise (and burn, and rise again) across the river as the years pass.
   buildLandmarks() {
     this.lms = [];
-    const add = (name, from, to, x, z, top, build, burns) => { const m = new THREE.Mesh(build(new GB()).build(), this.bMats); m.position.set(x, 0, z); m.visible = false; this.scene.add(m); const L = this.label(name, 24, '#f3ecdc'); L.position.set(x, top + 1.2, z); L.userData.h = 1.15; L.visible = false; this.lms.push({ name, top, m, L, from, to, x, z, burns }); };
+    const add = (name, from, to, x, z, top, build, burns) => { const m = this.shade(new THREE.Mesh(build(new GB()).build(), this.bMats)); m.position.set(x, 0, z); m.visible = false; this.scene.add(m); const L = this.label(name, 24, '#f3ecdc'); L.position.set(x, top + 1.2, z); L.userData.h = 1.15; L.visible = false; this.lms.push({ name, top, m, L, from, to, x, z, burns }); };
     add('Grain elevators', 1848, 1900, AX(60), AZ(-290), 5, g => g.box(0, 0, 0, 1.8, 4, 3.2, '#b89a6a', [0, 0, 1]).box(0, 4, 0, .8, 1, 3.2, '#a88a5c', [1, 6, 1]).roof(0, 5, 0, .9, .3, 3.3, '#5a5148', 'z').box(0, 0, 4.6, 1.8, 3.2, 2.6, '#b0926a', [0, 0, 1]).box(0, 3.2, 4.6, .8, .9, 2.6, '#a88a5c', [1, 5, 1]).roof(0, 4.1, 4.6, .9, .3, 2.7, '#5a5148', 'z'), true);
     add('Courthouse', 1853, 1871, AX(-120), AZ(-125), 5.6, g => g.box(0, 0, 0, 3, 1.8, 4.4, '#d8d0bc', [5, 7, 2]).box(0, 1.8, 0, 3.2, .15, 4.6, '#b9b1a4').box(0, 1.95, 0, 1.5, .9, 1.5, '#d8d0bc', [3, 3, 1]).box(0, 2.85, 0, 1.2, .6, 1.2, '#8fa39a').box(0, 3.45, 0, .8, .5, .8, '#8fa39a').box(0, 3.95, 0, .4, .5, .4, '#8fa39a').box(0, 4.45, 0, .05, 1, .05, '#ddd').box(.22, 5.2, 0, .4, .25, .02, '#b03030'), true);
     add('Water Tower', 1869, 1900, AX(100), AZ(-800), 5.6, g => { g.box(0, 0, 0, 2, 1, 2, '#e2d8b8', [3, 3, 1]).box(0, 1, 0, 1.3, .5, 1.3, '#e2d8b8').box(0, 1.5, 0, .7, 3, .7, '#e2d8b8', [1, 1, 5]).box(0, 4.5, 0, .95, .25, .95, '#d2c8a8').box(0, 4.75, 0, .5, .5, .5, '#8fa39a').box(0, 5.25, 0, .16, .5, .16, '#8fa39a'); for (const [a, b] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) g.box(a * .9, 0, b * .9, .3, 1.5, .3, '#e2d8b8').box(a * .9, 1.5, b * .9, .2, .3, .2, '#8fa39a'); return g; }, false);
@@ -333,19 +474,51 @@ export class World {
     const t = clamp((year - 1837) / 63, 0, 1), tall = clamp((year - 1875) / 25, 0, 1), m = this.surround, n = Math.floor(this.spots.length * (.02 + .98 * t * t));
     for (let k = 0; k < n; k++) { const p = this.spots[k], age = clamp((n - k) / 200, 0, 1); _m.compose(_p.set(p.x, 0, p.z), _q.identity(), p.h < .32 ? _s.set(0, 0, 0) : _s.set(1.4, .18 + age * (.2 + p.h * .35), 1.4)); m.setMatrixAt(k, _m); }
     m.count = n; m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true;
-    this.era = { tall, burned }; this.paintDowntown();
+    this.era = { tall, burned, year }; this.paintDowntown(); this.applyProps();
   }
   // Downtown is only as big as the ward that feeds it: it grows as the student builds.
-  dtHeight(k) { const p = this.dtSpots[k], e = this.era, near = 1 - clamp(p.d / 34, 0, 1); return e.burned ? .15 + p.h * .3 : .7 + p.h * 1.1 + near * .8 + e.tall * e.tall * (4 + p.h * 9) * (p.h > .45 ? 1 : .3) * p.loop; }
+  dtHeight(k) { const p = this.dtSpots[k], e = this.era, near = 1 - clamp(p.d / 34, 0, 1); if (e.burned) return .15 + p.h * .3;
+    // most blocks stay at four to nine floors; about one lot in five in the Loop becomes a tower, still below the Auditorium and the Masonic Temple
+    return .7 + p.h * 1.0 + near * .6 + e.tall * e.tall * (p.h > .8 ? 1.4 + (p.h - .8) * 16 : p.h * 1.1) * p.loop; }
+  // pick each building's walls, roof and shop front from its height and the year
+  dtStyle(k, H) {
+    const p = this.dtSpots[k], e = this.era, y = e.year;
+    if (e.burned) return { b: 1, c: -1, s: -1, t: _c.setRGB(.07, .06, .055).clone() };
+    const pal = (list, v) => C(list[(v * list.length) | 0]).lerp(C('#d6cfc0'), .12);
+    if (y < 1871) {
+      if (H < 1.7 && p.s < .62) return { b: 0, c: p.bs < .45 ? 2 : p.s < .3 ? 0 : 1, s: p.bs < .45 ? (p.h < .5 ? 1 : 3) : 0, t: pal(['#cbbd9f', '#b9a98a', '#a8987c', '#d8ccb2', '#a3a090', '#c2a888'], p.h) };
+      return { b: p.s < .8 ? 1 : 2, c: p.bs < .5 ? 3 : 4, s: (p.bs * 4) | 0, t: p.s < .8 ? pal(['#a8674f', '#9c5a44', '#b07258', '#c8bfa8'], p.h) : pal(['#d6cfbc', '#c8bfa8', '#b8b0a0'], p.h) };
+    }
+    if (H > 3.4) return { b: 3, c: H > 6 && p.s < .3 ? 6 : H > 5 && p.s > .86 ? 7 : p.s > .7 ? 8 : p.s < .5 ? 5 : 4, s: p.bs < .55 ? 4 : 1 + ((p.bs * 3) | 0) % 3, t: pal(['#a8674f', '#b98a6a', '#8f6a58', '#c4b49a', '#7a5446', '#c9c0aa'], p.h) };
+    const stone = p.s > .72;
+    return { b: stone ? 2 : 1, c: p.s > .9 ? 6 : p.bs < .5 ? 4 : 3, s: (p.bs * 4) | 0, t: stone ? pal(['#d6cfbc', '#c8bfa8', '#b8b0a0', '#a9a596'], p.h) : pal(['#a8674f', '#9c5a44', '#8a4e3c', '#b07258', '#7d4a3a'], p.h) };
+  }
+  placeDT(k, H) {
+    const p = this.dtSpots[k], sl = p.sl, BH = this.BH, flip = p.s * 10 % 1 < .5 ? 0 : Math.PI;
+    _q.setFromAxisAngle(_up, flip);
+    const burned = this.era.burned, bodyY = burned ? 0 : BH, bh = Math.max(.001, H - bodyY);
+    _m.compose(_p.set(p.x, bodyY, p.z + p.oz), _q, _s.set(p.w, bh, p.dd)); sl.b[0].setMatrixAt(sl.b[1], _m);
+    if (sl.s) { _m.compose(_p.set(p.x, 0, p.z + p.oz), _q, _s.set(p.w, clamp(H / BH, .001, 1), p.dd)); sl.s[0].setMatrixAt(sl.s[1], _m); }
+    if (sl.c) { _m.compose(_p.set(p.x, Math.max(H, .001), p.z + p.oz), _q, _s.set(p.w, H > .05 ? 1 : .001, p.dd)); sl.c[0].setMatrixAt(sl.c[1], _m); }
+  }
   paintDowntown() {
-    const d = this.downtown, e = this.era;
-    for (let k = 0; k < this.dtN; k++) { const p = this.dtSpots[k]; _m.compose(_p.set(p.x, 0, p.z), _q.identity(), _s.set(2.1, this.dtHeight(k), 2.1)); d.setMatrixAt(k, _m); d.setColorAt(k, e.burned ? _c.setRGB(.05, .045, .04) : _c.copy(TINTS.brick[k % 6]).lerp(C('#d6cfc0'), .62 + p.h * .3)); }
-    d.count = this.dtN; d.instanceMatrix.needsUpdate = true; d.instanceColor.needsUpdate = true;
+    const cnt = new Map(); for (const m of this.dtAll) cnt.set(m, 0);
+    const take = m => { const i = cnt.get(m); cnt.set(m, i + 1); return [m, i]; };
+    for (let k = 0; k < this.dtN; k++) {
+      const H = this.dtHeight(k), st = this.dtStyle(k, H), p = this.dtSpots[k];
+      p.sl = { b: take(this.dtBody[st.b]), c: st.c >= 0 ? take(this.dtCap[st.c]) : null, s: st.s >= 0 && H > .9 ? take(this.dtBase[st.s]) : null };
+      p.sl.b[0].setColorAt(p.sl.b[1], st.t);
+      if (p.sl.c) p.sl.c[0].setColorAt(p.sl.c[1], _c.copy(st.t).lerp(C('#ffffff'), .55));
+      if (p.sl.s) p.sl.s[0].setColorAt(p.sl.s[1], _c.setRGB(1, 1, 1).multiplyScalar(.9 + p.h * .15));
+      this.placeDT(k, H);
+    }
+    for (const m of this.dtAll) { m.count = cnt.get(m); m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true; }
+    this.drawDowntownGround(); this.rebuildDTTraffic();
   }
   setCity(n, instant) {
     const want = Math.round(this.dtSpots.length * clamp(.04 + n / 175, 0, 1)); if (want === this.dtN) return;
     const was = this.dtN; this.dtN = want; this.paintDowntown();
-    if (!instant) for (let k = was; k < want; k++) { const p = this.dtSpots[k]; this.dtAnims.push({ k, t: -(k - was) * .12 }); _m.compose(_p.set(p.x, 0, p.z), _q.identity(), _s.set(2.1, .001, 2.1)); this.downtown.setMatrixAt(k, _m); }
+    if (!instant) for (let k = was; k < want; k++) { this.dtAnims.push({ k, t: -(k - was) * .08 }); this.placeDT(k, .001); }
   }
 
   buildPools() {
@@ -439,11 +612,14 @@ export class World {
   // ---------- crowds, wagons, and streetcars: instanced, animated in the vertex shader ----------
   buildAgents() {
     this.agentMat = new THREE.ShaderMaterial({ uniforms: { uTime: { value: 0 }, uTint: { value: new THREE.Vector3(1, 1, 1) } }, vertexShader: AGENT_VS, fragmentShader: AGENT_FS });
-    const mk = geo => { const g = new THREE.InstancedBufferGeometry(); g.index = geo.index; g.setAttribute('position', geo.getAttribute('position')); g.setAttribute('normal', geo.getAttribute('normal')); g.instanceCount = 0; const m = new THREE.Mesh(g, this.agentMat); m.frustumCulled = false; this.scene.add(m); return m; };
-    const person = new THREE.BoxGeometry(.065, .16, .065); person.translate(0, .08, 0);
+    const mk = geo => { const g = new THREE.InstancedBufferGeometry(); g.index = geo.index; g.setAttribute('position', geo.getAttribute('position')); g.setAttribute('normal', geo.getAttribute('normal')); g.setAttribute('color', geo.getAttribute('color')); g.instanceCount = 0; const m = new THREE.Mesh(g, this.agentMat); m.frustumCulled = false; this.scene.add(m); return m; };
+    const person = new GB().box(0, 0, 0, .065, .16, .065, '#fff').build();
+    // on High: legs, coat (the agent's own color), face and hat
+    const rich = new GB().box(-.016, 0, 0, .026, .07, .03, '#2e2a27').box(.016, 0, 0, .026, .07, .03, '#2e2a27').box(0, .068, 0, .072, .072, .05, '#fff').box(0, .07, 0, .084, .03, .056, '#fff').box(0, .14, 0, .038, .042, .038, '#d6ad88').box(0, .182, 0, .052, .008, .052, '#2a2522').box(0, .19, 0, .034, .024, .034, '#2a2522').build();
     const wagon = new GB().box(0, .05, -.08, .16, .12, .3, '#fff').box(0, .03, .2, .07, .13, .2, '#fff').build();
     const car = new GB().box(0, .05, 0, .26, .26, .7, '#fff').box(0, .31, 0, .28, .03, .74, '#fff').build();
-    this.people = mk(person); this.wagons = mk(wagon); this.cars = mk(car);
+    this.people = mk(person); this.peopleRich = mk(rich); this.wagons = mk(wagon); this.cars = mk(car);
+    this.dtPeople = mk(person); this.dtPeopleRich = mk(rich); this.dtWagons = mk(wagon); this.dtCars = mk(car);
   }
   fillAgents(mesh, list) { // [ax,ay,az, bx,by,bz, speed, phase, scale, bob, r,g,b]
     const n = list.length, A = new Float32Array(n * 3), Bv = new Float32Array(n * 3), P = new Float32Array(n * 4), Cc = new Float32Array(n * 3);
@@ -468,7 +644,7 @@ export class World {
       if (k % 17 === 0) wag.push([...a, ...b, .025 + rnd() * .02, rnd(), 1, .3, .42 + rnd() * .2, .3 + rnd() * .12, .2]);
       else { const kid = rnd() < .25; ppl.push([...a, ...b, (.018 + rnd() * .02) * (kid ? 1.5 : 1) * (8 / len), rnd(), kid ? .62 : .9 + rnd() * .2, 1, c.r, c.g, c.b]); }
     }
-    this.fillAgents(this.people, ppl); this.fillAgents(this.wagons, wag);
+    const rich = this.Q[this.tier].rich; this.fillAgents(rich ? this.peopleRich : this.people, ppl); this.fillAgents(rich ? this.people : this.peopleRich, []); this.fillAgents(this.wagons, wag);
   }
   rebuildLines() {
     const s = this.sim, cars = [], gb = new GB(); let el = false;
@@ -483,7 +659,7 @@ export class World {
     }
     this.fillAgents(this.cars, cars);
     if (this.elMesh) { this.scene.remove(this.elMesh); this.elMesh.geometry.dispose(); this.elMesh = null; }
-    if (el) { this.elMesh = new THREE.Mesh(gb.build(), new THREE.MeshLambertMaterial({ vertexColors: true })); this.scene.add(this.elMesh); }
+    if (el) { this.elMesh = this.shade(new THREE.Mesh(gb.build(), new THREE.MeshLambertMaterial({ vertexColors: true }))); this.scene.add(this.elMesh); }
   }
 
   buildExtras() {
@@ -497,6 +673,30 @@ export class World {
     const tg = new GB().box(0, .04, 0, .3, .26, .9, '#1f1e1e').box(0, .3, .25, .12, .2, .12, '#1f1e1e').box(0, .04, -.55, .32, .34, .5, '#2b2928');
     for (let k = 0; k < 5; k++) tg.box(0, .04, -1.45 - k * 1.05, .32, .34, .95, k % 2 ? '#7a3b2e' : '#5d5140', [0, 4, 1]);
     this.train = new THREE.Mesh(tg.build(), this.bMats); this.train.visible = false; this.train.position.x = wx(TW - 1); this.scene.add(this.train); this.trainT = -1;
+  }
+  // street furniture: shown on Medium and High, and only once the city has it
+  buildProps() {
+    const lamp = new GB(), hyd = new GB(), pole = new GB(), junk = new GB(), wires = [];
+    const L = (x, z) => lamp.box(x, 0, z, .028, .44, .028, '#2a2826').box(x, .44, z, .07, .07, .07, '#e8d9a0').box(x, .51, z, .08, .02, .08, '#2a2826');
+    const H = (x, z) => hyd.box(x, 0, z, .05, .08, .05, '#7a2a22').box(x, .08, z, .035, .025, .035, '#5a1e18');
+    const J = (x, z, k) => { const r = hash(k); if (r < .4) junk.box(x, 0, z, .07, .09, .07, '#6a4a2c').box(x + .08, 0, z + .02, .07, .09, .07, '#5e4228'); else if (r < .7) junk.box(x, 0, z, .1, .07, .08, '#8a7350').box(x + .02, .07, z, .07, .05, .06, '#7a6444'); else junk.box(x, .03, z, .14, .04, .09, '#6b5a48').box(x - .05, 0, z, .03, .06, .03, '#3a3430').box(x + .05, 0, z, .03, .06, .03, '#3a3430').box(x + .1, .05, z, .1, .015, .015, '#4a4038'); };
+    for (let k = 0; k < NB; k++) {
+      const bx = k % BW, by = (k / BW) | 0, X0 = bx * 5 + 1 - HX, X1 = bx * 5 + 5 - HX, Z0 = by * 5 + 1 - HZ, Z1 = by * 5 + 5 - HZ, o = .16;
+      L(X0 - o, Z0 - o); L(X1 + o, Z1 + o); L((X0 + X1) / 2, Z0 - o); L((X0 + X1) / 2, Z1 + o); L(X0 - o, (Z0 + Z1) / 2); L(X1 + o, (Z0 + Z1) / 2);
+      H(X1 + o, Z0 - o); H(X0 - o, Z1 + o);
+      for (let j = 0; j < 4; j++) { const r = hash(k * 13 + j), side = (r * 4) | 0, t = .4 + hash(k * 7 + j) * 3.2; J(side === 0 ? X0 + t : side === 1 ? X0 + t : side === 2 ? X0 - o : X1 + o, side === 0 ? Z0 - o : side === 1 ? Z1 + o : Z0 + t, k * 5 + j); }
+    }
+    for (let r = 0; r < TH; r += 5) { const z = wz(r) + .4, tops = []; for (let x = -HX + .3; x < HX; x += 2.5) { pole.box(x, 0, z, .04, .78, .04, '#4a3d33').box(x, .7, z, .04, .03, .34, '#4a3d33'); tops.push(x); }
+      for (let q = 1; q < tops.length; q++) for (const dz of [-.14, .14]) wires.push(tops[q - 1], .72, z + dz, tops[q], .72, z + dz); }
+    if (this.dg) { const { P, SW, x0, z0, nx, nz, rz } = this.dg; for (let bz = 0; bz <= nz; bz++) for (let bx = 0; bx <= nx; bx++) { const x = x0 + bx * P + SW / 2 - .14, z = z0 + bz * P + SW / 2 - .14; if (Math.abs(z - rz) > 2.2) L(x, z); } }
+    const mat = new THREE.MeshLambertMaterial({ vertexColors: true }), mk = g => { const m = this.shade(new THREE.Mesh(g.build(), mat)); m.visible = false; this.scene.add(m); return m; };
+    const wg = new THREE.BufferGeometry(); wg.setAttribute('position', new THREE.Float32BufferAttribute(wires, 3));
+    const wm = new THREE.LineSegments(wg, new THREE.LineBasicMaterial({ color: '#2a2622', transparent: true, opacity: .55 })); wm.visible = false; this.scene.add(wm);
+    this.props = [[mk(lamp), 1855], [mk(hyd), 1872], [mk(pole), 1865], [wm, 1865], [mk(junk), 1840]];
+  }
+  applyProps() {
+    if (!this.props) return; const on = this.Q[this.tier].props, y = this.era ? this.era.year : 1837, burned = this.era && this.era.burned;
+    for (const [m, from] of this.props) m.visible = on && y >= from && !burned;
   }
   updateCemetery() {
     const n = Math.min(1000, Math.floor(this.sim.deaths / 1.2)), g = this.graves; if (n === this.graveN) return; if (n < (this.graveN || 0)) this.graveN = 0;
@@ -598,6 +798,12 @@ export class World {
       const cp = Math.cos(c.pitch); let sx = 0, sz = 0; if (this.shake > 0) { this.shake -= dt; sx = (Math.random() - .5) * this.shake * .5; sz = (Math.random() - .5) * this.shake * .5; }
       this.camera.position.set(c.x + Math.sin(c.yaw) * cp * c.dist + sx, Math.sin(c.pitch) * c.dist, c.z + Math.cos(c.yaw) * cp * c.dist + sz); this.camera.lookAt(c.x + sx, 0, c.z + sz);
     }
+    if (this.sun.castShadow) { // keep the shadow map on what the camera is looking at
+      const sc = this.sun.shadow.camera, S = this.street ? 14 : clamp(c.dist * .8, 12, 70), fx = this.street ? this.street.x : c.x, fz = this.street ? this.street.z : c.z;
+      if (sc.right !== S) { sc.left = sc.bottom = -S; sc.right = sc.top = S; sc.updateProjectionMatrix(); }
+      const step = S * 2 / 2048, sx_ = Math.round(fx / step) * step, sz_ = Math.round(fz / step) * step;
+      this.sun.position.set(sx_ - 40, 70, sz_ + 45); this.sun.target.position.set(sx_, 0, sz_); this.sun.target.updateMatrixWorld();
+    }
     const ls = this.street ? .02 : c.dist * .021;
     for (const L of this.streetLabels) { L.visible = !this.street && c.dist > 9; L.scale.set(L.userData.h * L.userData.ar * ls, L.userData.h * ls, 1); }
     for (const L of this.markLabels) { L.visible = !this.street && (L.userData.type < 0 ? this.sim.pop[L.userData.lot] > 0 : this.sim.b[L.userData.lot] === L.userData.type); L.scale.set(L.userData.h * L.userData.ar * ls, L.userData.h * ls, 1); }
@@ -606,13 +812,13 @@ export class World {
     this.waterMat.uniforms.uTime.value = this.lakeMat.uniforms.uTime.value = this.time;
     for (let q = this.dtAnims.length - 1; q >= 0; q--) { // new downtown buildings rise one after another
       const a = this.dtAnims[q]; a.t += dt * 1.6; if (a.k >= this.dtN) { this.dtAnims.splice(q, 1); continue; }
-      const t = clamp(a.t, 0, 1), p = this.dtSpots[a.k]; _m.compose(_p.set(p.x, 0, p.z), _q.identity(), _s.set(2.1, Math.max(.001, this.dtHeight(a.k) * (1 - Math.pow(1 - t, 3))), 2.1)); this.downtown.setMatrixAt(a.k, _m); this.downtown.instanceMatrix.needsUpdate = true;
+      const t = clamp(a.t, 0, 1); this.placeDT(a.k, Math.max(.001, this.dtHeight(a.k) * (1 - Math.pow(1 - t, 3)))); for (const m of this.dtAll) m.instanceMatrix.needsUpdate = true;
       if (a.t >= 1) this.dtAnims.splice(q, 1);
     }
     for (const L of this.hoodLabels) if (L) { if (this.street) L.visible = false; L.scale.set(L.userData.h * L.userData.ar * ls, L.userData.h * ls, 1); }
     this.renderer.render(this.scene, this.camera);
     // drop quality if the machine is struggling
-    const f = this.fps; f.n++; f.t += dt; if (f.t > 4) { f.v = f.n / f.t; f.n = 0; f.t = 0; if (f.v < 24 && this.tier < 2 && !document.hidden) { this.tier++; this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, this.Q[this.tier].dpr)); this.resize(); this.rebuildSmoke(); this.rebuildAgents(); } }
+    const f = this.fps; f.n++; f.t += dt; if (f.t > 4) { f.v = f.n / f.t; f.n = 0; f.t = 0; if (f.v < 24 && this.level === 'auto' && this.tier < 2 && !document.hidden) { this.tier++; this.applyTier(); } }
   }
   yearly() { this.recolor(); this.rebuildAgents(); this.rebuildSmoke(); this.updateHoods(); this.updateCemetery(); }
   // name tags for the two buildings students should be able to find again

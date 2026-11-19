@@ -16,7 +16,9 @@ const params = new URLSearchParams(location.search);
 const SAVE_KEY = 'urbangame-chicago-v2';
 
 const sim = new Sim();
-const world = new World($('#c'), sim, { low: params.has('lowgfx') });
+const GFX_KEY = 'urbangame-gfx';
+const gfxSaved = (() => { try { return localStorage.getItem(GFX_KEY) || 'auto'; } catch (e) { return 'auto'; } })();
+const world = new World($('#c'), sim, { low: params.has('lowgfx'), gfx: gfxSaved });
 const snd = new Sound();
 const G = { phase: 'start', name: '', timed: true, clock: 1.6, marks: {}, active: null, tLeft: 0, tMax: 0, photos: [], before: null, fireAcc: 0, wait: 0, then: null };
 window.__game = { sim, world, G };
@@ -276,6 +278,13 @@ function finish() {
 
 const saved = loadSave(); if (saved) { $('#resume').hidden = false; $('#resume').textContent = `Continue saved game (${ROUNDS[saved.sim.round + 1].year}${saved.name ? ', ' + saved.name : ''})`; $('#resume').onclick = () => begin(saved); }
 $('#go').onclick = () => begin(null);
+// graphics quality: chosen on the start card or with the button in the corner; remembered on this computer
+function setGfx(v) { world.setGfx(v); try { localStorage.setItem(GFX_KEY, v); } catch (e) { } const r = document.querySelector(`input[name=gfx][value=${v}]`); if (r) r.checked = true; }
+world.onTier = t => { $('#gfxbtn').textContent = 'Graphics: ' + world.Q[t].name + (world.level === 'auto' ? ' (auto)' : ''); };
+world.onTier(world.tier);
+{ const r = document.querySelector(`input[name=gfx][value=${world.level}]`); if (r) r.checked = true; }
+for (const r of document.querySelectorAll('input[name=gfx]')) r.onchange = () => setGfx(r.value);
+$('#gfxbtn').onclick = () => setGfx(['low', 'high', 'medium'][world.tier]); // Low, then Medium, then High, then back to Low
 if (ART.ui.includes('title')) $('.startcard').insertAdjacentHTML('afterbegin', '<img class="banner" src="assets/ui/title.jpg" alt="">');
 requestAnimationFrame(frame);
 (function idle() { if (G.phase === 'start') { world.cam.yaw += .0012; requestAnimationFrame(idle); } })();

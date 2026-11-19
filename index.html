@@ -34,6 +34,7 @@
     <button id="streetbtn">👁 Walk the streets</button>
     <button id="photobtn" hidden>📷 Take a photograph</button>
     <button id="sound" title="Sound on or off">🔊</button>
+    <button id="gfxbtn" title="Graphics quality: click to change">Graphics: Medium</button>
   </div>
 
   <div id="banner" hidden></div>
@@ -60,6 +61,13 @@
       <label><input type="radio" name="clock" value="1.6" checked> Relaxed</label>
       <label><input type="radio" name="clock" value="1"> Fast</label>
       <small>If the clock runs out, the builders finish the job wherever they like.</small>
+    </div>
+    <div class="opt"><span>Graphics</span>
+      <label><input type="radio" name="gfx" value="auto" checked> Auto</label>
+      <label><input type="radio" name="gfx" value="low"> Low</label>
+      <label><input type="radio" name="gfx" value="medium"> Medium</label>
+      <label><input type="radio" name="gfx" value="high"> High</label>
+      <small>High adds shadows, street lamps and wires, and more detailed people. On a Chromebook, use Medium or Low.</small>
     </div>
     <label class="chk"><input type="checkbox" id="tutopt" checked> Show me how to play</label>
     <label class="chk"><input type="checkbox" id="sndopt" checked> Sound</label>
