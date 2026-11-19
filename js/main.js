@@ -18,7 +18,7 @@ const SAVE_KEY = 'urbangame-chicago-v2';
 const sim = new Sim();
 const GFX_KEY = 'urbangame-gfx';
 const gfxSaved = (() => { try { return localStorage.getItem(GFX_KEY) || 'auto'; } catch (e) { return 'auto'; } })();
-const world = new World($('#c'), sim, { low: params.has('lowgfx'), gfx: gfxSaved });
+const world = new World($('#c'), sim, { low: params.has('lowgfx'), gfx: gfxSaved }); world.iconNames = ART.icons;
 const snd = new Sound();
 const G = { phase: 'start', name: '', timed: true, clock: 1.6, marks: {}, active: null, tLeft: 0, tMax: 0, photos: [], before: null, fireAcc: 0, wait: 0, then: null };
 window.__game = { sim, world, G };
@@ -166,7 +166,8 @@ function handleKeys(dt) {
 }
 $('#cambtns').onclick = e => { const c = e.target.dataset.cam; if (c === 'rl') world.rotate(-.4); if (c === 'rr') world.rotate(.4); if (c === 'zi') world.zoom(.75); if (c === 'zo') world.zoom(1.33); };
 const LEGEND = { health: '<div class="bar"></div><div class="lr"><span>Healthy</span><span>Sickly</span></div>', groups: GROUPS.map(g => `<span class="sw"><i style="background:${g.color}"></i>${g.short}</span>`).join('') };
-$('#mapview').onclick = e => { const o = e.target.dataset.o; if (!o) return; world.setOverlay(o); document.querySelectorAll('#mapview button').forEach(b => b.classList.toggle('on', b.dataset.o === o)); $('#legend').innerHTML = LEGEND[o] || ''; };
+LEGEND.buildings = 'An icon marks every building that is not a home. While you place a school, park, church or other service, dashed circles show how far the ones already built reach.';
+$('#mapview').onclick = e => { const o = e.target.dataset.o; if (!o) return; world.setBuildingsView(o === 'buildings'); world.setOverlay(o === 'buildings' ? 'none' : o); document.querySelectorAll('#mapview button').forEach(b => b.classList.toggle('on', b.dataset.o === o)); $('#legend').innerHTML = LEGEND[o] || ''; };
 function toggleStreet() {
   const b = $('#streetbtn');
   if (world.street) { world.exitStreet(); b.classList.remove('on'); b.textContent = '👁 Walk the streets'; $('#photobtn').hidden = true; }
@@ -235,6 +236,7 @@ function showResult() {
 
 let last = performance.now(), hudT = 0;
 function frame(now) {
+  world.setCover(G.phase === 'build' ? G.active : null); // coverage circles for whatever is being placed
   const dt = Math.min(.1, (now - last) / 1000); last = now;
   if (G.phase !== 'start') {
     handleKeys(dt);
@@ -274,6 +276,8 @@ function begin(saved) {
 function finish() {
   G.phase = 'done'; try { localStorage.removeItem(SAVE_KEY); } catch (e) { }
   if (world.street) toggleStreet(); $('#card').hidden = true; snd.bell(); buildReport($('#report'), sim, G);
+  // after the report, students can go back and look around the finished city, then reopen the report
+  $('#report').querySelector('#rcity').onclick = () => { $('#report').hidden = true; $('#repbtn').hidden = false; $('#hud').hidden = false; };
 }
 
 const saved = loadSave(); if (saved) { $('#resume').hidden = false; $('#resume').textContent = `Continue saved game (${ROUNDS[saved.sim.round + 1].year}${saved.name ? ', ' + saved.name : ''})`; $('#resume').onclick = () => begin(saved); }
@@ -289,3 +293,5 @@ if (ART.ui.includes('title')) $('.startcard').insertAdjacentHTML('afterbegin', '
 requestAnimationFrame(frame);
 (function idle() { if (G.phase === 'start') { world.cam.yaw += .0012; requestAnimationFrame(idle); } })();
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => { });
+
+$('#repbtn').onclick = () => { $('#report').hidden = false; $('#repbtn').hidden = true; };

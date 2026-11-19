@@ -89,10 +89,26 @@ const MODELS = {
   [T.NEWTEN]: g => g.box(-.26, 0, 0, .32, 1.0, .9, W, [2, 5, 4]).box(.26, 0, 0, .32, 1.0, .9, W, [2, 5, 4]).box(0, 0, -.28, .2, 1.0, .34, '#e6e0d2', [1, 2, 4]).box(-.26, 1.0, 0, .36, .05, .94, FLAT).box(.26, 1.0, 0, .36, .05, .94, FLAT).box(0, 0, .22, .18, .02, .5, '#6f9a58'),
   [T.MANSION]: g => g.box(0, 0, 0, .96, .02, .96, '#6f9a58').box(-.05, .02, -.08, .5, .5, .5, W, [2, 2, 2]).box(-.05, .52, -.08, .44, .16, .44, '#3d3a48').box(.2, .02, .14, .17, .8, .17, W, [1, 1, 3]).box(.2, .82, .14, .21, .1, .21, '#3d3a48').box(-.05, .02, .22, .4, .2, .1, '#efe9dd').tree(-.34, .32).tree(.36, -.3, 1.2),
   [T.SHOP]: [
-    g => g.box(0, 0, -.02, .6, .4, .8, W, [1, 2, 1]).box(0, 0, .4, .64, .58, .04, '#e9e2d0').box(0, .22, .5, .6, .03, .18, '#a84238').box(0, .4, -.02, .62, .03, .8, ROOF),
-    g => g.box(0, 0, -.02, .58, .5, .78, W, [2, 2, 2]).roof(0, .5, -.02, .64, .18, .84, ROOF, 'z').box(0, 0, .39, .6, .22, .04, '#3d3a37').box(0, .2, .5, .58, .03, .2, '#2f6a4a').box(.34, 0, .5, .14, .1, .14, '#c9a55a').box(-.34, 0, .52, .1, .14, .1, '#7a5a3a'),
+    // grocer: striped awning, sign board, crates of produce on the sidewalk
+    g => { g.box(0, 0, -.02, .6, .4, .8, W, [1, 2, 1]).box(0, 0, .4, .64, .58, .04, '#e9e2d0').box(0, .4, -.02, .62, .03, .8, ROOF).box(0, .04, .425, .44, .16, .01, '#2c3038').box(0, .44, .43, .44, .08, .02, '#3a3530');
+      for (let q = 0; q < 6; q++) g.box(-.25 + q * .1, .22, .5, .1, .03, .18, q % 2 ? '#e9e2d0' : '#a84238');
+      return g.box(-.22, 0, .56, .12, .06, .1, '#7a5a3a').box(-.22, .06, .56, .1, .025, .08, '#b8402e').box(-.08, 0, .56, .12, .06, .1, '#7a5a3a').box(-.08, .06, .56, .1, .025, .08, '#6a8a3a').box(.08, 0, .56, .12, .06, .1, '#7a5a3a').box(.08, .06, .56, .1, .025, .08, '#d08a2a').box(.26, 0, .56, .07, .1, .07, '#8a6a42'); },
+    // dry goods: green awning, big display windows, bolts of cloth and a barrel out front
+    g => { g.box(0, 0, -.02, .58, .5, .78, W, [2, 2, 2]).roof(0, .5, -.02, .64, .18, .84, ROOF, 'z').box(0, 0, .39, .6, .22, .04, '#3d3a37').box(-.16, .03, .415, .2, .15, .01, '#c9b88a').box(.16, .03, .415, .2, .15, .01, '#c9b88a').box(0, .26, .41, .4, .07, .02, '#efe6cc');
+      for (let q = 0; q < 6; q++) g.box(-.25 + q * .1, .2, .5, .1, .03, .2, q % 2 ? '#e9e2d0' : '#2f6a4a');
+      return g.box(.34, 0, .5, .14, .1, .14, '#c9a55a').box(-.34, 0, .52, .1, .14, .1, '#7a5a3a').box(-.2, 0, .58, .14, .04, .06, '#7a3b5a').box(-.2, .04, .58, .14, .04, .06, '#3f5f8a'); },
   ],
-  [T.SALOON]: g => g.box(0, 0, -.02, .62, .46, .8, W, [1, 2, 1]).box(0, 0, .4, .66, .64, .04, '#d9cfb8').box(0, .46, .43, .44, .12, .03, '#27503c').box(0, .46, -.02, .64, .03, .8, ROOF).box(.38, 0, .34, .1, .12, .1, '#6b4a2f').box(.38, 0, .2, .1, .12, .1, '#6b4a2f'),
+  [T.SALOON]: [
+    // frame saloon: swinging doors, a gas lamp, a gold sign with a beer mug, barrels by the door
+    g => g.box(0, 0, -.02, .62, .46, .8, W, [1, 2, 1]).box(0, 0, .4, .66, .64, .04, '#d9cfb8').box(0, .46, .43, .44, .12, .03, '#27503c').box(0, .48, .45, .34, .06, .01, '#e8c25a').box(0, .46, -.02, .64, .03, .8, ROOF)
+      .box(0, .02, .43, .18, .24, .02, '#2a1e16').box(0, .06, .445, .16, .12, .01, '#8a5a32').box(.24, .1, .45, .14, .16, .01, '#e8c070')
+      .box(-.26, .3, .47, .02, .02, .14, '#2a2622').box(-.26, .18, .54, .1, .12, .02, '#e8c25a').box(-.26, .3, .54, .08, .03, .03, '#f4efe0')
+      .box(.4, 0, .5, .025, .34, .025, '#2a2826').box(.4, .34, .5, .06, .07, .06, '#e8d9a0').box(.38, 0, .34, .1, .12, .1, '#6b4a2f').box(.38, 0, .2, .1, .12, .1, '#6b4a2f').box(-.4, .1, .52, .02, .02, .26, '#5a4632'),
+    // brick corner saloon: dark green front, lit windows, sign across the corner
+    g => g.box(0, 0, 0, .72, .64, .82, '#9c5a44', [2, 3, 2]).box(0, 0, 0, .74, .25, .84, '#27503c').box(0, .05, .425, .52, .15, .01, '#e8c070').box(.375, .05, 0, .01, .15, .56, '#e8c070')
+      .box(0, .26, .44, .56, .08, .03, '#e8c25a').box(0, .64, 0, .78, .05, .88, '#3a3430').box(.24, .69, -.2, .08, .14, .08, '#6a4436')
+      .box(-.3, 0, .52, .1, .12, .1, '#6b4a2f').box(-.18, 0, .52, .1, .12, .1, '#6b4a2f').box(.42, 0, .5, .025, .36, .025, '#2a2826').box(.42, .36, .5, .06, .07, .06, '#e8d9a0'),
+  ],
   [T.STORE]: g => g.box(0, .26, 0, .86, .7, .86, W, [4, 4, 2]).box(0, 0, 0, .84, .26, .84, '#3a3836').box(0, .96, 0, .9, .06, .9, FLAT).box(0, .24, .5, .8, .03, .16, '#2f5a7a'),
   [T.WORKSHOP]: [
     g => g.box(0, 0, 0, .8, .32, .8, '#cdbf9e', [2, 2, 1]).roof(0, .32, 0, .86, .16, .86, '#5a5148', 'x').box(.26, .3, -.22, .08, .46, .08, '#5b5550'),
@@ -142,6 +158,8 @@ for (const k in TINTS) TINTS[k] = TINTS[k].map(C);
 // where the smoke comes out, in building-local coordinates: [x, y, z, particles, size]
 const STACKS = { [T.GAS]: [.4, 1.14, .1, 5, 1.2], [T.ELEV]: [.48, 1.4, .1, 1, .6], [T.FACTORY]: [.3, 1.56, -.3, 7, 1.5], [T.WORKSHOP]: [.26, .78, -.22, 3, .9], [T.RAIL]: [.2, .3, -.2, 2, .9], [T.SWEAT]: [-.2, 1.36, .2, 2, .7], [T.BTEN]: [.25, 1.38, -.2, 1, .6], [T.WTEN]: [.18, 1.04, -.1, 1, .6] };
 
+const HOME = new Set([T.SHANTY, T.COTTAGE, T.REAR, T.WTEN, T.BRICK, T.BTEN, T.NEWTEN, T.MANSION, T.RUBBLE, T.BARN]);
+const SAME = { [T.MARKET]: T.SHOP, [T.BOSS]: T.SALOON, [T.STPAT]: T.CHURCH }; // the sim counts these together
 const HGT = { [T.SHANTY]: .2, [T.COTTAGE]: .45, [T.REAR]: .5, [T.WTEN]: .9, [T.BRICK]: .6, [T.BTEN]: 1.2, [T.NEWTEN]: 1.05, [T.SHOP]: .5, [T.SALOON]: .55, [T.MARKET]: .2, [T.BOSS]: .7, [T.WORKSHOP]: .45, [T.FACTORY]: .75, [T.LUMBER]: .28, [T.SWEAT]: 1.35, [T.ELEV]: 1.7, [T.GAS]: .6, [T.RUBBLE]: .08, [T.FIRE]: .6, [T.POLICE]: .55, [T.SCHOOL]: .8, [T.CHURCH]: .7, [T.STPAT]: .9, [T.PARK]: .12, [T.BATH]: .45, [T.HOSP]: .85, [T.HULL]: .6, [T.DEPOT]: .6, [T.BARN]: .4 };
 
 export const heat = (v, out = _c) => { v = clamp(v, 0, 1); if (v < .5) out.setRGB(.25 + v * 1.5, .64 + v * .24, .3 - v * .4, THREE.SRGBColorSpace); else out.setRGB(1 - (v - .5) * .3, .76 - (v - .5) * 1.1, .1 + (v - .5) * .1, THREE.SRGBColorSpace); return out; };
@@ -309,6 +327,11 @@ export class World {
       const h = HGT[s.b[i]]; if (!h) continue;
       const X = s.tx[i] * PX, Y = s.ty[i] * PX, m = PX * .16, x0 = X + m, x1 = X + PX - m, y0 = Y + m, y1 = Y + PX - m, dx = h * .6 * PX, dy = h * .68 * PX;
       x.beginPath(); x.moveTo(x0, y1); x.lineTo(x1, y1); x.lineTo(x1 + dx, y1 - dy); x.lineTo(x1 + dx, y0 - dy); x.lineTo(x0 + dx, y0 - dy); x.lineTo(x0, y0); x.closePath(); x.fill();
+    }
+    if (this.coverK != null) { // how far the existing ones reach
+      const cg = SAME[this.coverK] ?? this.coverK, r = B[this.coverK].r;
+      for (let i = 0; i < NL; i++) { const t = s.b[i]; if (!t || (SAME[t] ?? t) !== cg) continue; const cx = (s.tx[i] + .5) * PX, cy = (s.ty[i] + .5) * PX, rr = (B[t].r || r) * PX;
+        x.fillStyle = 'rgba(255,214,110,.38)'; x.beginPath(); x.arc(cx, cy, rr, 0, 7); x.fill(); x.setLineDash([12, 6]); x.lineWidth = 5; x.strokeStyle = 'rgba(150,70,10,.95)'; x.stroke(); x.setLineDash([]); }
     }
     for (const L of s.lines) { // streetcar rails
       x.fillStyle = '#26221f';
@@ -571,7 +594,7 @@ export class World {
     }
     if (this.slotT[i]) { const P = this.pools[this.slotT[i]]; P.mesh.setColorAt(this.slotI[i], this.colorFor(i)); P.mesh.instanceColor.needsUpdate = true; }
   }
-  syncAll() { for (let i = 0; i < NL; i++) this.setLot(i, false); this.drawGround(); this.rebuildSmoke(); this.rebuildFire(); this.rebuildAgents(); this.rebuildLines(); this.updateCemetery(); this.updateHoods(); this.setEra(this.sim.year, this.sim.year === 1871 && !!this.sim.done.fire); }
+  syncAll() { for (let i = 0; i < NL; i++) this.setLot(i, false); this.drawGround(); this.rebuildSmoke(); this.rebuildFire(); this.rebuildAgents(); this.rebuildLines(); this.updateCemetery(); this.updateHoods(); this.setEra(this.sim.year, this.sim.year === 1871 && !!this.sim.done.fire); this.updateBadges(); }
   recolor() { for (let i = 0; i < NL; i++) if (this.slotT[i]) this.pools[this.slotT[i]].mesh.setColorAt(this.slotI[i], this.colorFor(i)); for (const k in this.pools) { const m = this.pools[k].mesh; if (m.count) m.instanceColor.needsUpdate = true; } }
   setOverlay(o) { this.overlay = o; this.recolor(); this.drawGround(); }
 
@@ -698,6 +721,29 @@ export class World {
     if (!this.props) return; const on = this.Q[this.tier].props, y = this.era ? this.era.year : 1837, burned = this.era && this.era.burned;
     for (const [m, from] of this.props) m.visible = on && y >= from && !burned;
   }
+  // Buildings view: an icon badge over everything that is not a home. While placing a school, fire station and so on,
+  // circles on the ground show how far the ones already built reach, so the gaps are easy to see.
+  setBuildingsView(on) { this.labelsOn = on; this.updateBadges(); }
+  setCover(k) { const r = k != null && B[k] && B[k].r && !HOME.has(k) ? k : null; if (r === this.coverK) return; this.coverK = r; this.groundWait = .01; this.updateBadges(); }
+  badgeTex(t) {
+    this.badgeCache = this.badgeCache || {}; if (this.badgeCache[t]) return this.badgeCache[t];
+    const c = document.createElement('canvas'); c.width = c.height = 96; const x = c.getContext('2d'), tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+    const paint = img => { x.clearRect(0, 0, 96, 96); x.fillStyle = 'rgba(0,0,0,.35)'; x.beginPath(); x.arc(48, 51, 42, 0, 7); x.fill(); x.fillStyle = '#f4ecd8'; x.beginPath(); x.arc(48, 47, 42, 0, 7); x.fill(); x.lineWidth = 5; x.strokeStyle = '#b08a4a'; x.stroke();
+      if (img) x.drawImage(img, 14, 13, 68, 68); else { x.font = '44px serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(B[t].icon || '?', 48, 50); } tex.needsUpdate = true; };
+    paint(null); const name = Object.keys(T).find(k => T[k] === t).toLowerCase();
+    if ((this.iconNames || []).includes(name)) { const im = new Image(); im.onload = () => paint(im); im.src = `assets/icons/${name}.png`; }
+    return (this.badgeCache[t] = tex);
+  }
+  updateBadges() {
+    const s = this.sim; this.badges = this.badges || []; const cg = this.coverK != null ? SAME[this.coverK] ?? this.coverK : null;
+    for (let i = 0; i < NL; i++) {
+      const t = s.b[i], show = t && !HOME.has(t) && (this.labelsOn || (cg != null && (SAME[t] ?? t) === cg));
+      let sp = this.badges[i];
+      if (!show) { if (sp) sp.visible = false; continue; }
+      if (!sp || sp.userData.t !== t) { if (sp) { this.scene.remove(sp); sp.material.dispose(); } sp = this.badges[i] = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.badgeTex(t), depthTest: false, transparent: true, fog: false })); sp.renderOrder = 7; sp.userData.t = t; this.scene.add(sp); }
+      sp.position.set(wx(s.tx[i]), (HGT[t] || .5) + .5, wz(s.ty[i])); sp.visible = true;
+    }
+  }
   updateCemetery() {
     const n = Math.min(1000, Math.floor(this.sim.deaths / 1.2)), g = this.graves; if (n === this.graveN) return; if (n < (this.graveN || 0)) this.graveN = 0;
     for (let k = this.graveN || 0; k < n; k++) { const col = k % 20, row = (k / 20) | 0; _q.setFromAxisAngle(_up, (hash(k) - .5) * .5); _m.compose(_p.set(-HX - 2.2 - col * .46, 0, HZ - .6 - row * .42), _q, _s.set(1, .8 + hash(k + 3) * .4, 1)); g.setMatrixAt(k, _m); }
@@ -769,7 +815,7 @@ export class World {
   // ---------- frame ----------
   update(dt) {
     const s = this.sim; this.time += dt;
-    if (s.dirty.length) { const seen = new Set(s.dirty); s.dirty.length = 0; for (const i of seen) this.setLot(i, true); if (!(this.groundWait > 0)) this.groundWait = .6; if (s.burning.length || this.fire.visible) this.rebuildFire(); }
+    if (s.dirty.length) { const seen = new Set(s.dirty); s.dirty.length = 0; for (const i of seen) this.setLot(i, true); this.updateBadges(); if (!(this.groundWait > 0)) this.groundWait = .6; if (s.burning.length || this.fire.visible) this.rebuildFire(); }
     if (s.groundDirty) { s.groundDirty = false; this.groundWait = .12; }
     if (this.groundWait > 0 && (this.groundWait -= dt) <= 0) this.drawGround();
     if (this.smokeDirty && !(this.smokeWait > 0)) this.smokeWait = .6;
@@ -815,6 +861,7 @@ export class World {
       const t = clamp(a.t, 0, 1); this.placeDT(a.k, Math.max(.001, this.dtHeight(a.k) * (1 - Math.pow(1 - t, 3)))); for (const m of this.dtAll) m.instanceMatrix.needsUpdate = true;
       if (a.t >= 1) this.dtAnims.splice(q, 1);
     }
+    if (this.badges) { const bs = ls * 1.7; for (const b of this.badges) if (b && b.visible) { if (this.street) b.visible = false; b.scale.set(bs, bs, 1); } }
     for (const L of this.hoodLabels) if (L) { if (this.street) L.visible = false; L.scale.set(L.userData.h * L.userData.ar * ls, L.userData.h * ls, 1); }
     this.renderer.render(this.scene, this.camera);
     // drop quality if the machine is struggling

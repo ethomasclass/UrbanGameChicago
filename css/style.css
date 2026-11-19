@@ -213,3 +213,5 @@ img.banner { display: block; width: calc(100% + 56px); margin: -20px -28px 14px;
 @media (max-height: 760px) { #card:not(.side) .paper img.banner { height: 130px; object-fit: cover; } .startcard img.banner { height: 120px; } }
 #gfxbtn { position: fixed; left: 60px; bottom: 12px; padding: 8px 12px; border-radius: 7px; font: 600 12px var(--sans); color: #f3ecdc; background: var(--grain), linear-gradient(180deg, #235a66, var(--teal2)); border: 1px solid var(--brass2); box-shadow: var(--bevel), 0 4px 12px rgba(0, 0, 0, .45); cursor: pointer; }
 #hud[hidden] ~ #views #gfxbtn { display: none; }
+#repbtn { position: fixed; top: 64px; left: 50%; transform: translateX(-50%); z-index: 30; padding: 10px 18px; border-radius: 7px; font: 600 14px var(--sans); color: #f3ecdc; background: var(--grain), linear-gradient(180deg, #c8642e, #9a4420); border: 1px solid var(--brass2); box-shadow: var(--bevel), 0 4px 12px rgba(0, 0, 0, .45); cursor: pointer; }
+#mapview { flex-wrap: wrap; } #mapview button { flex: 1 1 40%; padding: 6px 6px; }

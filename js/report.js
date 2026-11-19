@@ -48,7 +48,7 @@ export function buildReport(root, s, G) {
     ${G.photos.length ? `<h2>Your photographs</h2><div class="photos">${G.photos.map(p => `<figure style="margin:0"><img src="${p.src}"><figcaption style="font:12px system-ui">${p.cap}</figcaption></figure>`).join('')}</div>` : ''}
     <h2>Think it through</h2>
     ${qs.map(q => `<div class="q"><label>${q[1]}</label><textarea data-q="${q[0]}"></textarea></div>`).join('')}
-    <div class="btns"><button class="big" id="rprint">Print or save as PDF</button><button class="big ghost" id="ragain">Play again</button></div>
+    <div class="btns"><button class="big" id="rprint">Print or save as PDF</button><button class="big ghost" id="rcity">Back to the city</button><button class="big ghost" id="ragain">Play again</button></div>
   </div>`;
   root.hidden = false; root.scrollTop = 0;
   chart(root.querySelector('#ch1'), h, GROUPS.map((g, k) => ({ color: g.color, f: x => x.g[k] })), { stack: true });
