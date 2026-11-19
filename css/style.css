@@ -204,3 +204,4 @@ img.banner { display: block; width: calc(100% + 56px); margin: -20px -28px 14px;
 #banner { background: linear-gradient(180deg, #d9502a, #8a2412); border: 2px solid var(--brass); box-shadow: var(--bevel), 0 6px 24px rgba(0, 0, 0, .6); }
 #toast { background: var(--teal2); border: 1px solid var(--brass); box-shadow: var(--bevel), 0 6px 18px rgba(0, 0, 0, .5); }
 #start { background: radial-gradient(ellipse at 50% 40%, rgba(14, 42, 51, .2), rgba(14, 42, 51, .8)); } .eyebrow, .fam h4 { color: var(--red); }
+#card.side .paper img.banner { width: calc(100% + 44px); margin: -16px -22px 0; }

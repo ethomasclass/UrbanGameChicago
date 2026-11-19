@@ -1,7 +1,19 @@
 {
- "portraits": [],
- "icons": [],
- "rounds": [],
+ "portraits": [
+  "addams",
+  "bridget",
+  "pike"
+ ],
+ "icons": [
+  "cottage",
+  "factory"
+ ],
+ "rounds": [
+  "1837"
+ ],
  "ui": [],
- "landmarks": []
+ "landmarks": [
+  "hullhouse",
+  "watertower"
+ ]
 }
