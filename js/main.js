@@ -54,7 +54,7 @@ function drawList() {
   $('#lnow small').textContent = it.n > 1 ? `${it.left} of ${it.n} left to place` : 'Just one. Choose well.'; if (!changed && pips) $('#lnow .pips').outerHTML = pips;
   if (changed) {
     const who = (ADVICE[k] || []).filter(v => v.from <= sim.round).slice(0, 2);
-    $('#advice').innerHTML = who.map(v => `<div class="voice"><img src="${portrait(v.who, sim.round)}" alt=""><div><b>${CHARACTERS[v.who].name} <span>${CHARACTERS[v.who].role}</span></b><q>${v.say}</q></div></div>`).join('');
+    $('#advice').innerHTML = who.map(v => `<div class="voice"><span class="pf"><img src="${portrait(v.who, sim.round)}" alt=""></span><div><b>${CHARACTERS[v.who].name} <span>${CHARACTERS[v.who].role}</span></b><q>${v.say}</q></div></div>`).join('');
     $('#tip').textContent = howTo(k); const more = sim.todo.length - idx - 1; $('#lnext').textContent = more ? `${more} more thing${more > 1 ? 's' : ''} after this.` : 'This is the last thing this round.';
     if (G.shown != null) snd.zone();
   }
