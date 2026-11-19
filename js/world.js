@@ -158,6 +158,9 @@ vec3 n=normalize(rt*normal.x+vec3(0.,normal.y,0.)+dir*normal.z); float l=.6+.4*m
 gl_Position=projectionMatrix*viewMatrix*vec4(wp,1.); }`;
 const AGENT_FS = `varying vec3 vC; void main(){ gl_FragColor=vec4(pow(vC,vec3(.4545)),1.); }`;
 
+// Chicago street addresses to world coordinates, using the ward's own scale: e = east (+) or west (-) of State St, s = south (+) or north (-) of Madison St.
+const AX = e => -HX + .5 + (e + 800) / 15, AZ = s => -HZ + .5 + (s - 400) / 35;
+
 class Pool {
   constructor(geo, mat, cap, scene) { this.mesh = new THREE.InstancedMesh(geo, mat, cap); this.mesh.count = 0; this.mesh.frustumCulled = false; this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage); this.lots = new Int32Array(cap); this.cap = cap; this.mesh.setColorAt(0, _c.set(1, 1, 1)); scene.add(this.mesh); }
 }
@@ -237,9 +240,10 @@ export class World {
         float bank=smoothstep(0.,1.1,min(p.x-uX.x,uX.y-p.x)); col*=.72+.28*bank; gl_FragColor=vec4(pow(col,vec3(.4545)),1.); }`,
     });
     this.riverMat = { color: this.waterMat.uniforms.uColor.value };
+    const main = new THREE.Mesh(new THREE.PlaneGeometry(AX(120) - HX - 8, 3.4), this.waterMat); main.rotation.x = -Math.PI / 2; main.position.set((AX(120) + HX + 8) / 2, -.02, AZ(-330)); this.scene.add(main);
     // Lake Michigan, beyond downtown
-    this.lakeMat = this.waterMat.clone(); this.lakeMat.uniforms.uColor.value = C('#6d9bb0'); this.lakeMat.uniforms.uX.value = new THREE.Vector2(HX + 46, HX + 900);
-    const lake = new THREE.Mesh(new THREE.PlaneGeometry(420, 900), this.lakeMat); lake.rotation.x = -Math.PI / 2; lake.position.set(HX + 46 + 210, -.03, 0); this.scene.add(lake);
+    this.lakeMat = this.waterMat.clone(); this.lakeMat.uniforms.uColor.value = C('#6d9bb0'); this.lakeMat.uniforms.uX.value = new THREE.Vector2(AX(120), AX(120) + 900);
+    const lake = new THREE.Mesh(new THREE.PlaneGeometry(420, 900), this.lakeMat); lake.rotation.x = -Math.PI / 2; lake.position.set(AX(120) + 210, -.03, 0); this.scene.add(lake);
     const riv = new THREE.Mesh(new THREE.PlaneGeometry(8, 900), this.waterMat); riv.rotation.x = -Math.PI / 2; riv.position.set(HX + 4.6, -.02, 0); this.scene.add(riv);
     const gb = new GB();
     for (const row of [0, 2, 4]) { const z = wz(row * 5); gb.box(HX + 4.6, 0, z, 9.4, .12, .8, '#6b5a48').box(HX + 4.6, .12, z - .42, 9.4, .14, .05, '#3a3430').box(HX + 4.6, .12, z + .42, 9.4, .14, .05, '#3a3430').box(HX + 4.6, 0, z, .7, .5, 1.1, '#4a4038').box(HX + 4.6, .5, z, .5, .3, .5, '#5a4a40'); }
@@ -293,7 +297,7 @@ export class World {
     spots.sort((a, b) => a.d - b.d); this.spots = spots;
     const m = this.surround = new THREE.InstancedMesh(gb.build(), this.bMats, spots.length); m.frustumCulled = false; m.count = 0; this.scene.add(m);
     spots.forEach((p, k) => { m.setColorAt(k, _c.copy(TINTS.frame[k % 5]).lerp(C('#e2d9c4'), .45).multiplyScalar(1 + p.h * .15)); });
-    const dt = []; for (let z = -HZ - 26; z < HZ + 26; z += 3.4) for (let x = HX + 10; x < HX + 44; x += 3.4) dt.push({ x, z, h: hash(dt.length + 99), d: x - HX });
+    const dt = []; for (let z = AZ(-900); z < HZ + 30; z += 3.4) for (let x = HX + 10; x < AX(110) - 1.5; x += 3.4) { if (Math.abs(z - AZ(-330)) < 3.2) continue; const loop = z > AZ(-330) && z < AZ(560) ? 1 : .3; dt.push({ x, z, h: hash(dt.length + 99), d: (x - HX) * .5 + Math.abs(z - AZ(-50)) * .7, loop }); }
     const LM = this.buildLandmarks();
     for (let k = dt.length - 1; k >= 0; k--) if (LM.some(m => Math.abs(m.x - dt[k].x) < 3.4 && Math.abs(m.z - dt[k].z) < 3.4)) dt.splice(k, 1);
     dt.sort((p, q) => (p.d + p.h * 9) - (q.d + q.h * 9)); this.dtN = Math.round(dt.length * .04); this.dtAnims = [];
@@ -304,20 +308,23 @@ export class World {
   buildLandmarks() {
     this.lms = [];
     const add = (name, from, to, x, z, top, build, burns) => { const m = new THREE.Mesh(build(new GB()).build(), this.bMats); m.position.set(x, 0, z); m.visible = false; this.scene.add(m); const L = this.label(name, 24, '#f3ecdc'); L.position.set(x, top + 1.2, z); L.userData.h = 1.15; L.visible = false; this.lms.push({ m, L, from, to, x, z, burns }); };
-    add('Grain elevators', 1848, 1900, HX + 10.4, -6, 5, g => g.box(0, 0, 0, 1.8, 4, 3.2, '#b89a6a', [0, 0, 1]).box(0, 4, 0, .8, 1, 3.2, '#a88a5c', [1, 6, 1]).roof(0, 5, 0, .9, .3, 3.3, '#5a5148', 'z').box(0, 0, 4.6, 1.8, 3.2, 2.6, '#b0926a', [0, 0, 1]).box(0, 3.2, 4.6, .8, .9, 2.6, '#a88a5c', [1, 5, 1]).roof(0, 4.1, 4.6, .9, .3, 2.7, '#5a5148', 'z'), true);
-    add('Courthouse', 1853, 1871, HX + 17, -3, 5.6, g => g.box(0, 0, 0, 3, 1.8, 4.4, '#d8d0bc', [5, 7, 2]).box(0, 1.8, 0, 3.2, .15, 4.6, '#b9b1a4').box(0, 1.95, 0, 1.5, .9, 1.5, '#d8d0bc', [3, 3, 1]).box(0, 2.85, 0, 1.2, .6, 1.2, '#8fa39a').box(0, 3.45, 0, .8, .5, .8, '#8fa39a').box(0, 3.95, 0, .4, .5, .4, '#8fa39a').box(0, 4.45, 0, .05, 1, .05, '#ddd').box(.22, 5.2, 0, .4, .25, .02, '#b03030'), true);
-    add('Water Tower', 1869, 1900, HX + 21, -HZ - 9, 5.6, g => { g.box(0, 0, 0, 2, 1, 2, '#e2d8b8', [3, 3, 1]).box(0, 1, 0, 1.3, .5, 1.3, '#e2d8b8').box(0, 1.5, 0, .7, 3, .7, '#e2d8b8', [1, 1, 5]).box(0, 4.5, 0, .95, .25, .95, '#d2c8a8').box(0, 4.75, 0, .5, .5, .5, '#8fa39a').box(0, 5.25, 0, .16, .5, .16, '#8fa39a'); for (const [a, b] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) g.box(a * .9, 0, b * .9, .3, 1.5, .3, '#e2d8b8').box(a * .9, 1.5, b * .9, .2, .3, .2, '#8fa39a'); return g; }, false);
-    add('Home Insurance Building', 1885, 1900, HX + 14, 3.2, 6.2, g => g.box(0, 0, 0, 2.8, .9, 2.4, '#8a8478', [5, 4, 1]).box(0, .9, 0, 2.7, 5, 2.3, '#a8674f', [6, 5, 9]).box(0, 5.9, 0, 2.9, .25, 2.5, '#6a4a3c'), false);
-    add('Auditorium', 1889, 1900, HX + 19.5, 9, 9.6, g => g.box(0, 0, 0, 4.2, 4.6, 3, '#b9b0a0', [8, 6, 8]).box(0, 4.6, 0, 4.3, .2, 3.1, '#8a8478').box(1.2, 4.8, .6, 1.5, 4.2, 1.5, '#b9b0a0', [3, 3, 8]).box(1.2, 9, .6, 1.7, .25, 1.7, '#8a8478').box(1.2, 9.25, .6, .9, .3, .9, '#8a8478'), false);
-    add('Masonic Temple', 1892, 1900, HX + 14.5, -9.5, 11.4, g => g.box(0, 0, 0, 2.6, 9.6, 2.6, '#8f6a58', [5, 5, 18]).box(0, 9.6, 0, 2.8, .25, 2.8, '#5a4038').roof(0, 9.85, 0, 2.6, 1.3, 2.6, '#4a5560', 'z'), false);
-    // the Ferris wheel of 1893, far to the south on the lakefront
+    add('Grain elevators', 1848, 1900, AX(60), AZ(-290), 5, g => g.box(0, 0, 0, 1.8, 4, 3.2, '#b89a6a', [0, 0, 1]).box(0, 4, 0, .8, 1, 3.2, '#a88a5c', [1, 6, 1]).roof(0, 5, 0, .9, .3, 3.3, '#5a5148', 'z').box(0, 0, 4.6, 1.8, 3.2, 2.6, '#b0926a', [0, 0, 1]).box(0, 3.2, 4.6, .8, .9, 2.6, '#a88a5c', [1, 5, 1]).roof(0, 4.1, 4.6, .9, .3, 2.7, '#5a5148', 'z'), true);
+    add('Courthouse', 1853, 1871, AX(-120), AZ(-125), 5.6, g => g.box(0, 0, 0, 3, 1.8, 4.4, '#d8d0bc', [5, 7, 2]).box(0, 1.8, 0, 3.2, .15, 4.6, '#b9b1a4').box(0, 1.95, 0, 1.5, .9, 1.5, '#d8d0bc', [3, 3, 1]).box(0, 2.85, 0, 1.2, .6, 1.2, '#8fa39a').box(0, 3.45, 0, .8, .5, .8, '#8fa39a').box(0, 3.95, 0, .4, .5, .4, '#8fa39a').box(0, 4.45, 0, .05, 1, .05, '#ddd').box(.22, 5.2, 0, .4, .25, .02, '#b03030'), true);
+    add('Water Tower', 1869, 1900, AX(100), AZ(-800), 5.6, g => { g.box(0, 0, 0, 2, 1, 2, '#e2d8b8', [3, 3, 1]).box(0, 1, 0, 1.3, .5, 1.3, '#e2d8b8').box(0, 1.5, 0, .7, 3, .7, '#e2d8b8', [1, 1, 5]).box(0, 4.5, 0, .95, .25, .95, '#d2c8a8').box(0, 4.75, 0, .5, .5, .5, '#8fa39a').box(0, 5.25, 0, .16, .5, .16, '#8fa39a'); for (const [a, b] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) g.box(a * .9, 0, b * .9, .3, 1.5, .3, '#e2d8b8').box(a * .9, 1.5, b * .9, .2, .3, .2, '#8fa39a'); return g; }, false);
+    add('Home Insurance Building', 1885, 1900, AX(-140), AZ(190), 6.2, g => g.box(0, 0, 0, 2.8, .9, 2.4, '#8a8478', [5, 4, 1]).box(0, .9, 0, 2.7, 5, 2.3, '#a8674f', [6, 5, 9]).box(0, 5.9, 0, 2.9, .25, 2.5, '#6a4a3c'), false);
+    add('Auditorium', 1889, 1900, AX(70), AZ(450), 9.6, g => g.box(0, 0, 0, 4.2, 4.6, 3, '#b9b0a0', [8, 6, 8]).box(0, 4.6, 0, 4.3, .2, 3.1, '#8a8478').box(1.2, 4.8, .6, 1.5, 4.2, 1.5, '#b9b0a0', [3, 3, 8]).box(1.2, 9, .6, 1.7, .25, 1.7, '#8a8478').box(1.2, 9.25, .6, .9, .3, .9, '#8a8478'), false);
+    add('Masonic Temple', 1892, 1900, AX(15), AZ(-160), 11.4, g => g.box(0, 0, 0, 2.6, 9.6, 2.6, '#8f6a58', [5, 5, 18]).box(0, 9.6, 0, 2.8, .25, 2.8, '#5a4038').roof(0, 9.85, 0, 2.6, 1.3, 2.6, '#4a5560', 'z'), false);
+    add('Dearborn Station', 1885, 1900, AX(-36), AZ(830), 7.4, g => g.box(0, 0, 0, 2.6, 1.6, 1.8, '#b0604a', [5, 3, 2]).roof(0, 1.6, 0, 2.7, .7, 1.9, '#4a4a52', 'x').box(0, 0, 2.6, 2, 1, 3.4, '#8a8478', [0, 0, 1]).roof(0, 1, 2.6, 2.1, .5, 3.5, '#5a5550', 'z').box(.7, 0, -.5, .8, 5, .8, '#b0604a', [1, 1, 8]).box(.7, 5, -.5, 1, .25, 1, '#6a4a3c').roof(.7, 5.25, -.5, .9, 1.6, .9, '#4a4a52', 'z').box(.7, 4.2, -.08, .4, .4, .02, '#f4efe0'), false);
+    // Too far away to show at true distance, so these two sit on the southern horizon in the right direction, with the real distance on the label.
+    add('Union Stock Yards, 4 miles south', 1865, 1900, AX(-900), HZ + 46, 2.2, g => { g.box(0, 0, 0, 16, .03, 9, '#7a6a52'); for (let q = -7; q <= 7; q += 2) g.box(q, .03, 0, .06, .25, 9, '#4a3d30'); for (let q = -4; q <= 4; q += 2) g.box(0, .03, q, 16, .25, .06, '#4a3d30'); return g.box(-5, .03, -3, 2.4, 1.3, 1.6, '#a8674f', [4, 3, 2]).box(-4.4, 1.33, -3.4, .25, 1.6, .25, '#6a4a3c').box(4, .03, 2, 3, .9, 1.4, '#b89a6a', [5, 2, 1]).box(0, .03, -4.2, 1, 1.5, .5, '#d8d0bc').roof(0, 1.53, -4.2, 1.1, .5, .6, '#4a4a52', 'x'); }, false);
+    // the Ferris wheel of 1893, on the Midway beside the World's Fair
     const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d'); x.translate(128, 128); x.strokeStyle = '#2a2622'; x.lineWidth = 5; x.beginPath(); x.arc(0, 0, 112, 0, 7); x.stroke(); x.lineWidth = 2.5; x.beginPath(); x.arc(0, 0, 96, 0, 7); x.stroke();
     for (let k = 0; k < 36; k++) { const a = k / 36 * Math.PI * 2; x.lineWidth = 1.2; x.beginPath(); x.moveTo(0, 0); x.lineTo(Math.cos(a) * 112, Math.sin(a) * 112); x.stroke(); x.fillStyle = k % 2 ? '#a8322a' : '#c9973a'; x.fillRect(Math.cos(a) * 118 - 5, Math.sin(a) * 118 - 4, 10, 8); }
     x.fillStyle = '#2a2622'; x.beginPath(); x.arc(0, 0, 7, 0, 7); x.fill();
     const wt = new THREE.CanvasTexture(c); wt.colorSpace = THREE.SRGBColorSpace;
-    const fx = HX + 22, fz = HZ + 36, wheel = this.wheel = new THREE.Mesh(new THREE.PlaneGeometry(13, 13), new THREE.MeshBasicMaterial({ map: wt, transparent: true, alphaTest: .25, side: THREE.DoubleSide }));
+    const fx = AX(40), fz = HZ + 62, wheel = this.wheel = new THREE.Mesh(new THREE.PlaneGeometry(13, 13), new THREE.MeshBasicMaterial({ map: wt, transparent: true, alphaTest: .25, side: THREE.DoubleSide }));
     wheel.rotation.order = 'YXZ'; wheel.rotation.y = Math.PI / 2; wheel.position.set(fx, 7.2, fz); wheel.visible = false; this.scene.add(wheel);
-    add('Ferris Wheel, 1893', 1893, 1893, fx, fz, 14, g => g.box(0, 0, -2.2, .3, 7.2, .3, '#3a3634').box(0, 0, 2.2, .3, 7.2, .3, '#3a3634').box(.5, 0, 0, .3, 7.2, .3, '#3a3634').box(-.5, 0, 0, .3, 7.2, .3, '#3a3634').box(0, 0, 0, 3, .4, 6, '#e9e2d0', [4, 8, 1]), false);
+    add('Ferris Wheel at the Fair, 6 miles south', 1893, 1893, fx, fz, 14, g => g.box(0, 0, -2.2, .3, 7.2, .3, '#3a3634').box(0, 0, 2.2, .3, 7.2, .3, '#3a3634').box(.5, 0, 0, .3, 7.2, .3, '#3a3634').box(-.5, 0, 0, .3, 7.2, .3, '#3a3634').box(0, 0, 0, 3, .4, 6, '#e9e2d0', [4, 8, 1]), false);
     return this.lms;
   }
   setEra(year, burned) {
@@ -329,7 +336,7 @@ export class World {
     this.era = { tall, burned }; this.paintDowntown();
   }
   // Downtown is only as big as the ward that feeds it: it grows as the student builds.
-  dtHeight(k) { const p = this.dtSpots[k], e = this.era, near = 1 - clamp(p.d / 34, 0, 1); return e.burned ? .15 + p.h * .3 : .7 + p.h * 1.1 + near * .8 + e.tall * e.tall * (4 + p.h * 9) * (p.h > .45 ? 1 : .3); }
+  dtHeight(k) { const p = this.dtSpots[k], e = this.era, near = 1 - clamp(p.d / 34, 0, 1); return e.burned ? .15 + p.h * .3 : .7 + p.h * 1.1 + near * .8 + e.tall * e.tall * (4 + p.h * 9) * (p.h > .45 ? 1 : .3) * p.loop; }
   paintDowntown() {
     const d = this.downtown, e = this.era;
     for (let k = 0; k < this.dtN; k++) { const p = this.dtSpots[k]; _m.compose(_p.set(p.x, 0, p.z), _q.identity(), _s.set(2.1, this.dtHeight(k), 2.1)); d.setMatrixAt(k, _m); d.setColorAt(k, e.burned ? _c.setRGB(.05, .045, .04) : _c.copy(TINTS.brick[k % 6]).lerp(C('#d6cfc0'), .62 + p.h * .3)); }
@@ -512,7 +519,7 @@ export class World {
     NS_STREETS.forEach((n, k) => { const s = this.label(n, 30, '#f3ecdc'); s.position.set(wx(k * 5), .2, HZ + 1.4); s.userData.h = 1.1; this.streetLabels.push(s); });
     EW_STREETS.forEach((n, k) => { const s = this.label(n, 30, '#f3ecdc'); s.position.set(-HX - 2.4, .2, wz(k * 5)); s.userData.h = 1.1; this.streetLabels.push(s); });
     this.markLabels = []; this.marks = {};
-    const extra = [['Downtown Chicago', HX + 24, 5, -HZ - 6, 1.6], ['Lake Michigan', HX + 56, 2, 0, 1.8], ["Potter's field", -HX - 6.5, 1.2, -HZ - 1.5, 1], ['Chicago River', HX + 4.6, .6, HZ + 2.5, 1]];
+    const extra = [['The Loop', AX(-60), 8, AZ(0), 1.9], ['Lake Michigan', AX(120) + 12, 2, AZ(300), 1.8], ['Haymarket Square', AX(-660), 1, AZ(-150), 1], ['Halsted Street viaduct', AX(-800), 1, AZ(1600), 1], ['North Side', AX(-60), 3, AZ(-700), 1.3], ["Potter's field", -HX - 6.5, 1.2, -HZ - 1.5, 1], ['Chicago River', HX + 4.6, .6, HZ + 2.5, 1]];
     for (const [t, x, y, z, h] of extra) { const s = this.label(t, 28, '#f3ecdc'); s.position.set(x, y, z); s.userData.h = h; this.streetLabels.push(s); }
     this.hoodLabels = GROUPS.map((g, k) => { if (!k) return null; const s = this.label(HOOD_NAMES[k], 34, '#fff', g.color); s.visible = false; s.userData.h = 1.5; return s; });
   }
@@ -534,8 +541,8 @@ export class World {
     const ps = this.renderer.getPixelRatio() * h / (2 * Math.tan(this.camera.fov * Math.PI / 360)) * .2;
     for (const m of [this.smokeMat, this.fireMat, this.fsmokeMat]) m.uniforms.uScale.value = ps;
   }
-  pan(dx, dz) { const c = this.cam, cs = Math.cos(c.yaw), sn = Math.sin(c.yaw); c.tx = clamp(c.tx + dx * cs + dz * sn, -HX - 14, HX + 10); c.tz = clamp(c.tz - dx * sn + dz * cs, -HZ - 6, HZ + 6); }
-  zoom(f) { this.cam.td = clamp(this.cam.td * f, 6, 75); }
+  pan(dx, dz) { const c = this.cam, cs = Math.cos(c.yaw), sn = Math.sin(c.yaw); c.tx = clamp(c.tx + dx * cs + dz * sn, -HX - 14, AX(120)); c.tz = clamp(c.tz - dx * sn + dz * cs, AZ(-800), HZ + 30); }
+  zoom(f) { this.cam.td = clamp(this.cam.td * f, 6, 120); }
   rotate(a, p = 0) { this.cam.yaw += a; this.cam.pitch = clamp(this.cam.pitch + p, .3, 1.45); }
   flyTo(i, d) { this.cam.tx = wx(this.sim.tx[i]); this.cam.tz = wz(this.sim.ty[i]); if (d) this.cam.td = d; }
   enterStreet(x, z) { const tx = clamp(Math.round((x + HX - .5) / 5) * 5, 0, TW - 1); this.street = { x: wx(tx), z: clamp(z, -HZ + 1, HZ - 1), yaw: Math.PI, pitch: .05 }; this.camera.fov = 68; this.camera.near = .03; this.resize(); }

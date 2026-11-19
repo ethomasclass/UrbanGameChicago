@@ -27,7 +27,21 @@ Twelve characters speak in the game. Each needs one portrait.
 
 **Later options:** two or three ages for Bridget, a second expression per character (pleased, grim) chosen by how the ward is doing, and portraits for the Malone and Rossi children.
 
-## 2. A look for the whole game
+## Direction chosen (November 2026): flat-color illustrated portraits
+
+Reference: a three-quarter bust built from flat planes of color with no outlines, on cream, in deep teal and navy with one warm orange accent, and a dry-brush or spatter texture where the figure fades out at the bottom.
+
+Rules that keep twelve portraits looking like one set:
+
+- **Palette:** cream ground (`#f1e7cf`, already the game's paper color), deep teal and navy for clothing and shadow, one warm accent per character (hair, shawl, hat band, waistcoat). No other hues.
+- **Shading:** two or three flat tones per surface, hard edges, light always from the upper left.
+- **Crop:** head and shoulders, turned three-quarters, eyes on the upper third. Same head size in every portrait.
+- **Period comes from costume:** hats, collars, shawls, hair. This is what tells a student it is 1855 and not today, so each character gets one unmistakable silhouette piece.
+- **Edges:** transparent background; the spatter fade at the bottom is fine, nothing behind the head.
+- **Legibility:** must still read at 72 pixels wide. Check every portrait at that size before calling it done.
+- **Real people** (Addams, Powers, Dunne) are drawn from period photographs. Invented characters are free.
+
+## 2. Other looks considered
 
 Pick one before drawing anything, because the portraits set it. Three directions that fit the period and print well:
 
