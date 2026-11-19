@@ -17,6 +17,10 @@ ROOT = Path(__file__).resolve().parent.parent
 RAW, OUT = ROOT / 'art' / 'raw', ROOT / 'assets'
 EXT = {'.png', '.jpg', '.jpeg', '.webp'}
 
+# Banners whose subject is not in the middle: 0 keeps the top of the image, 1 the bottom.
+BANNER_BIAS = {'1900': 0.95, '1855': 0.3, '1893': 0.62}
+
+
 def crop_to(img, ratio, top_bias=0.5):
     """Center-crop to width/height = ratio. top_bias 0 keeps the top, 1 the bottom."""
     w, h = img.size
@@ -51,7 +55,7 @@ def main():
         im = trim(cut_background(Image.open(p))).resize((160, 160), Image.LANCZOS)
         im.save(OUT / 'icons' / f'{p.stem.lower()}.png'); man['icons'].append(p.stem.lower())
     for p in files('rounds'):        # wide banner across the top of a history card
-        im = crop_to(Image.open(p).convert('RGB'), 3.2).resize((1120, 350), Image.LANCZOS)
+        im = crop_to(Image.open(p).convert('RGB'), 3.2, BANNER_BIAS.get(p.stem.lower(), 0.5)).resize((1120, 350), Image.LANCZOS)
         im.save(OUT / 'rounds' / f'{p.stem.lower()}.jpg', quality=85); man['rounds'].append(p.stem.lower())
     for p in files('landmarks'):     # hero shot across the top of a landmark card
         im = crop_to(Image.open(p).convert('RGB'), 16 / 9).resize((1120, 630), Image.LANCZOS)

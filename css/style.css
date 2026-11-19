@@ -209,3 +209,5 @@ img.banner { display: block; width: calc(100% + 56px); margin: -20px -28px 14px;
 .voice .pf { flex: none; display: block; width: 84px; height: 112px; overflow: hidden; border-radius: 42px 42px 6px 6px; border: 3px solid var(--brass2); box-shadow: 0 4px 10px rgba(0, 0, 0, .35); background: linear-gradient(180deg, #f6ecd4, #dccba0); box-sizing: content-box; }
 .voice .pf img { display: block; width: 100%; height: 100%; border: 0; border-radius: 0; box-shadow: none; background: none; }
 .voice .pf img[src^="assets"] { transform: scale(1.75); transform-origin: 50% 8%; }
+.startcard img.banner { height: 170px; object-fit: cover; object-position: 50% 45%; }
+@media (max-height: 760px) { #card:not(.side) .paper img.banner { height: 130px; object-fit: cover; } .startcard img.banner { height: 120px; } }

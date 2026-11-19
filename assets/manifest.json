@@ -1,19 +1,82 @@
 {
  "portraits": [
   "addams",
+  "beck",
+  "bridget-2",
+  "bridget-3",
   "bridget",
-  "pike"
+  "crane",
+  "doyle",
+  "dunne",
+  "lund",
+  "pike",
+  "powers",
+  "rosa",
+  "voss",
+  "whitlow"
  ],
  "icons": [
+  "bath",
+  "boss",
+  "brick",
+  "bten",
+  "church",
   "cottage",
-  "factory"
+  "depot",
+  "el",
+  "elev",
+  "factory",
+  "fire",
+  "gas",
+  "hosp",
+  "hull",
+  "line",
+  "lumber",
+  "market",
+  "newten",
+  "park",
+  "police",
+  "rear",
+  "saloon",
+  "school",
+  "sewer",
+  "shanty",
+  "shop",
+  "stpat",
+  "sweat",
+  "workshop",
+  "wten"
  ],
  "rounds": [
-  "1837"
+  "1837",
+  "1848",
+  "1855",
+  "1865",
+  "1871",
+  "1872",
+  "1877",
+  "1882",
+  "1889",
+  "1893",
+  "1900"
  ],
- "ui": [],
+ "ui": [
+  "title"
+ ],
  "landmarks": [
+  "auditorium",
+  "courthouse",
+  "dearborn",
+  "elevator",
+  "elevators",
+  "ferris",
+  "homeinsurance",
   "hullhouse",
+  "masonic",
+  "maxwell",
+  "powers",
+  "stockyards",
+  "stpatricks",
   "watertower"
  ]
 }
